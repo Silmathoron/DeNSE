@@ -65,7 +65,7 @@ axon_params = {
 dendrite_params = {
     "use_van_pelt": True,
 
-    "persistence_length": 100.0 * um,
+    "persistence_length": 150.0 * um,
     "taper_rate": 1./80.,
     "diameter_fraction_lb": 0.5,
 

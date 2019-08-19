@@ -107,17 +107,6 @@ However, with the introduction of dumb node it could be easy and increase
 linearly with the distance from the soma.
 
 
-### Lateral branching
-
-Decrease with time? Probably not.
-
-For FLPL branching, change it: choose an active growth cone and generate the
-branch with a decaying power-law probability from the tip, make the exponent
-chosen by the user.
-
-@CheckStatus
-
-
 What needs improving:
 ---------------------
 
