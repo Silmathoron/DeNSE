@@ -594,6 +594,11 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
     scale : length, optional (default: 50 microns)
         Whether a scale bar should be displayed, with axes hidden. If ``None``,
         then spatial measurements will be given through standard axes.
+        If ``False``, then no spatial scale (neither bar nor axes) will be
+        displayed.
+    scale_text : bool, optional (default: True)
+        Whether a text with detailing the measurement of the scale bar should
+        be displayed.
     subsample : int, optional (default: 1)
         Subsample the neurites to save memory.
     save_path : str, optional (default: not saved)
@@ -623,7 +628,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
         "'sticks' or 'mixed'."
 
     if show_density:
-        subsample = 1 
+        subsample = 1
 
     # plot
     fig, ax, ax2 = None, None, None
@@ -773,7 +778,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
             n = int(dmax)
             norm = matplotlib.colors.BoundaryNorm(
                 np.arange(0, dmax+1, 1), cmap.N)
-            
+
         counts, xbins, ybins = np.histogram2d(x, y, bins=(xbins, ybins))
         lims = [xbins[0], xbins[-1], ybins[0], ybins[-1]]
         counts[counts == 0] = np.NaN
@@ -781,7 +786,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
         data = ax2.imshow(counts.T, extent=lims, origin="lower",
                           vmin=0 if dmin is None else dmin, vmax=dmax,
                           cmap=cmap)
-        
+
         if colorbar:
             extend = "neither"
             if dmin is not None and dmax is not None:
@@ -795,31 +800,32 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
         ax2.set_aspect(aspect)
         ax2.set_xlabel(r"x ($\mu$ m)")
         ax2.set_ylabel(r"y ($\mu$ m)")
-    
+
     if scale is not None:
-        xmin, xmax = ax.get_xlim()
-        ymin, ymax = ax.get_ylim()
-
-        length = scale.m_as("micrometer")
-
-        if xmax - xmin < 2*length:
-            scale *= 0.2
-            length = scale.m_as("micrometer")
-
-        x = xmin + 0.2*length
-        y = ymin + (ymax-ymin)*0.05
-
-        ax.add_artist(
-            Rectangle((x, y), length, 0.1*length, fill=True, facecolor='k',
-                      edgecolor='none'))
-
         plt.axis('off')
 
-        stext = "(scale is {} $\mu$m)".format(length)
-        if title is not None and scale_text:
-            fig.suptitle(title + " " + stext)
-        elif scale_text:
-            fig.suptitle(stext)
+        if scale:
+            xmin, xmax = ax.get_xlim()
+            ymin, ymax = ax.get_ylim()
+
+            length = scale.m_as("micrometer")
+
+            if xmax - xmin < 2*length:
+                scale *= 0.2
+                length = scale.m_as("micrometer")
+
+            x = xmin + 0.2*length
+            y = ymin + (ymax-ymin)*0.05
+
+            ax.add_artist(
+                Rectangle((x, y), length, 0.1*length, fill=True, facecolor='k',
+                        edgecolor='none'))
+
+            stext = "(scale is {} $\mu$m)".format(length)
+            if title is not None and scale_text:
+                fig.suptitle(title + " " + stext)
+            elif scale_text:
+                fig.suptitle(stext)
 
     if show:
         plt.show()
