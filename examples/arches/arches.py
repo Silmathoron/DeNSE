@@ -19,7 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with DeNSE. If not, see <http://www.gnu.org/licenses/>.
 
-
 import os
 
 import numpy as np
@@ -41,7 +40,7 @@ Main parameters
 
 num_neurons = 10
 
-num_omp = 6
+num_omp = 1
 
 soma_radius = 3.
 use_uniform_branching = False
@@ -116,15 +115,13 @@ if __name__ == '__main__':
     else:
         neuron_params['position'] = np.random.uniform(-1000, 1000, (200, 2)) * um
 
-    print("Creating neurons")
     gids = ds.create_neurons(
-        n=num_neurons, culture=culture, params=neuron_params,
+        n=num_neurons, params=neuron_params,
         dendrites_params=dendrite_params, num_neurites=2)
 
-    print("neuron created, starting simu")
     ds.plot.plot_neurons(show=True)
 
-    step(5 * day, 0, False)
+    # step(5 * day, 0, False)
 
-    # prepare the plot
-    ds.plot.plot_neurons(show_density=False, dstep=4., dmax=10, cmap="jet")
+    # # prepare the plot
+    # ds.plot.plot_neurons(show_density=False, dstep=4., dmax=10, cmap="jet")

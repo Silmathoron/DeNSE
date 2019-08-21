@@ -285,21 +285,21 @@ std::string get_simulation_id_() { return kernel().get_simulation_ID(); }
  */
 
 void set_environment_(
-    GEOSGeometry * environment, const std::vector<GEOSGeometry *> &areas,
-    std::vector<double> heights, const std::vector<std::string> &names,
+    const std::string& env_wkt, const std::vector<std::string> &areas,
+    const std::vector<double> &heights, const std::vector<std::string> &names,
     const std::vector<std::unordered_map<std::string, double>> &properties)
 {
-    kernel().space_manager.set_environment(environment, areas, heights, names,
+    kernel().space_manager.set_environment(env_wkt, areas, heights, names,
                                            properties);
 }
 
 
 void get_environment_(
-    GEOSGeometry *&environment, std::vector<GEOSGeometry *> &areas,
+    std::string& env_wkt, std::vector<std::string> &areas,
     std::vector<double> &heights, std::vector<std::string> &names,
     std::vector<std::unordered_map<std::string, double>> &properties)
 {
-    kernel().space_manager.get_environment(environment, areas, heights, names,
+    kernel().space_manager.get_environment(env_wkt, areas, heights, names,
                                            properties);
 }
 
@@ -723,7 +723,7 @@ void get_geom_skeleton_(std::vector<stype> gids,
                 // growth cone position
                 BPolygon disk = kernel().space_manager.make_disk(
                     gc.second->get_position(), 0.5*gc.second->get_diameter());
-                
+
                 s.str("");
                 s << std::setprecision(12) << bg::wkt(disk);
                 geom_tmp = GEOSWKTReader_read_r(ch, reader, s.str().c_str());
@@ -778,7 +778,7 @@ void generate_synapses_(
             presyn_neurons, postsyn_neurons, presyn_neurites, postsyn_neurites,
             presyn_nodes, postsyn_nodes, presyn_segments, postsyn_segments,
             pre_syn_x, pre_syn_y);
-        
+
         post_syn_x = pre_syn_x;
         post_syn_y = pre_syn_y;
     }

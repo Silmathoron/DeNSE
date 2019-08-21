@@ -2,7 +2,7 @@
 #-*- coding:utf-8 -*-
 # cython: language_level=@PYTHON_VERSION_MAJOR@
 
-""" Generation tools for NNGT """
+""" Header file for the Cython interface """
 
 from libc.stdint cimport uintptr_t
 
@@ -114,15 +114,14 @@ cdef extern from "../module.hpp" namespace "growth":
     cdef void delete_neurites_(const vector[stype] &neurons,
                                const vector[string] &names) except +
 
-    cdef void get_environment_(GEOSGeometry*& environment,
-                               vector[GEOSGeometry*]& areas,
-                               vector[double] heights, vector[string]& names,
+    cdef void get_environment_(string &env_wkt, vector[string] &areas,
+                               vector[double] &heights, vector[string]& names,
                                vector[unordered_map[string, double]]& properties
                                ) except +
 
     cdef void set_environment_(
-        GEOSGeometry* environment, const vector[GEOSGeometry*]& areas,
-        const vector[double]& heights, vector[string]& names,
+        const string &env_wkt, const vector[string] &areas,
+        const vector[double]& heights, const vector[string]& names,
         const vector[unordered_map[string, double]]& properties
         ) except +
 
@@ -143,7 +142,7 @@ cdef extern from "../module.hpp" namespace "growth":
         vector[stype] gids, vector[GEOSGeometry*]& axons,
         vector[GEOSGeometry*]& dendrites, vector[stype]& dendrite_gids,
         vector[vector[double]]& somas) except +
-    
+
     cdef void generate_synapses_(
         bool crossings_only, double density,
         bool only_new_syn, bool autapse_allowed,
@@ -154,7 +153,7 @@ cdef extern from "../module.hpp" namespace "growth":
         vector[stype] &presyn_segments, vector[stype] &postsyn_segments,
         vector[double] &pre_syn_x, vector[double] &pre_syn_y,
         vector[double] &post_syn_x, vector[double] &post_syn_y) except +
-    
+
     cdef void get_distances_(stype gid, const string &neurite, stype node,
                              stype segment, double &dist_to_parent,
                              double &dist_to_soma) except +

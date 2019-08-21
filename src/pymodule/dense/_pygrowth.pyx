@@ -36,6 +36,8 @@ import pint
 import numpy as np
 cimport numpy as np
 
+from shapely.wkt import loads
+
 from .environment import Shape
 from .units import ureg
 from ._helpers import *
@@ -153,7 +155,7 @@ def create_neurons(n=1, params=None, axon_params=None, dendrites_params=None,
     neurons : Neuron, Population, or ints
         By default, returns a :class:`~dense.elements.Neuron` object if a
         single neuron is requested, a :class:`~dense.elements.Popuulation` if
-        several neurons are created, or a tuple of the neurons' GIDs if 
+        several neurons are created, or a tuple of the neurons' GIDs if
         `return_ints` is True.
 
     Example
@@ -304,7 +306,7 @@ def create_neurons(n=1, params=None, axon_params=None, dendrites_params=None,
         area = get_area(
             on_area if neurites_on_area is True else neurites_on_area,
             culture)
-            
+
         for param in params:
             param = neuron_param_parser(
                 param, culture, n=1, rnd_pos=rnd_pos, on_area=on_area)
@@ -618,7 +620,7 @@ def generate_model(elongation, steering, direction_selection):
 
     assert direction_selection in dtypes, \
         "Invalid `direction_selection` " + direction_selection + "."
-        
+
     return Model(elongation, steering, direction_selection)
 
 
@@ -640,16 +642,16 @@ def get_environment():
     from shapely.geometry.base import geom_factory
 
     cdef:
-        GEOSGeometry* geos_geom = NULL
+        string env_wkt
         uintptr_t pygeos_geom = 0
-        vector[GEOSGeometry*] c_areas
+        vector[string] c_areas
         vector[double] heights
         vector[string] names
         vector[unordered_map[string, double]] properties
 
-    get_environment_(geos_geom, c_areas, heights, names, properties)
+    get_environment_(env_wkt, c_areas, heights, names, properties)
 
-    if geos_geom == NULL:
+    if env_wkt.empty():
         return None
 
     # build the Areas
@@ -659,30 +661,32 @@ def get_environment():
         try:
             from .environment import Area
             for i in range(c_areas.size()):
-                pygeos_geom = <uintptr_t>c_areas[i]
-                shapely_object = geom_factory(pygeos_geom)
-                # [IMPORTANT]
-                shapely_object._other_owned = True
-                # [/IMPORTANT]
+                area_wkt = _to_string(c_areas[i])
                 str_name = _to_string(names[i])
                 # separate default area from others
                 if str_name.find("default_area") == 0:
                     default_properties = properties[i]
                 else:
+                    area_tmp = loads(area_wkt)
                     py_areas.append(Area.from_shape(
-                        shapely_object, heights[i], str_name, properties[i]))
+                        area_tmp, heights[i], str_name, properties[i]))
         except ImportError:
             pass
 
     # build the environment
-    pygeos_geom = <uintptr_t>geos_geom
-    shapely_object = geom_factory(pygeos_geom)
-    # [IMPORTANT] tell Shapely to NOT delete the C++ object when the python
-    # wrapper goes out of scope!
-    shapely_object._other_owned = True
-    # [/IMPORTANT]
-    env = Shape.from_polygon(shapely_object, min_x=None,
+    pyenv_wkt = _to_string(env_wkt)
+    # make sure that there is a single Polygon in it and use this Polygon
+    s_poly = loads(pyenv_wkt)
+
+    if s_poly.geom_type == "MultiPolygon":
+        assert len(s_poly) == 1, "Error, environment should be made of a " +\
+                                 "single Polygon!"
+        s_poly = s_poly[0]
+
+    env = Shape.from_polygon(s_poly, min_x=None,
                              default_properties=default_properties)
+
+    env._return_quantity = True
 
     # add the areas to the Shape
     for area in py_areas:
@@ -1184,9 +1188,9 @@ def reset_kernel():
 
 
 def set_environment(culture, min_x=None, max_x=None, unit='um',
-                   parent=None, interpolate_curve=50,
-                   internal_shapes_as="holes", default_properties=None,
-                   other_properties=None):
+                    parent=None, interpolate_curve=50,
+                    internal_shapes_as="holes", default_properties=None,
+                    other_properties=None):
     """
     Create the culture environment
 
@@ -1242,8 +1246,8 @@ def set_environment(culture, min_x=None, max_x=None, unit='um',
             default_properties=default_properties,
             other_properties=other_properties)
     cdef:
-        GEOSGeometry* geos_geom
-        vector[GEOSGeometry*] c_areas
+        string env_wkt
+        vector[string] c_areas
         vector[double] heights
         vector[string] names
         vector[unordered_map[string, double]] properties
@@ -1251,15 +1255,15 @@ def set_environment(culture, min_x=None, max_x=None, unit='um',
     # fill the containers
     for name, area in culture.areas.items():
         # fill area containers
-        c_areas.push_back(geos_from_shapely(area))
+        c_areas.push_back(_to_bytes(area.wkt))
         names.push_back(_to_bytes(name))
         heights.push_back(area.height)
         properties.push_back(
             {_to_bytes(k): v for k, v in area.properties.items()})
 
-    geos_geom = geos_from_shapely(culture)
+    env_wkt = _to_bytes(culture.wkt)
 
-    set_environment_(geos_geom, c_areas, heights, names, properties)
+    set_environment_(env_wkt, c_areas, heights, names, properties)
 
     culture._return_quantity = True
 

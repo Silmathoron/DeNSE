@@ -89,8 +89,8 @@ void set_kernel_status_(const statusMap &status_dict, std::string simulation_ID)
 
 
 void set_environment_(
-    GEOSGeometry *environment, const std::vector<GEOSGeometry *> &areas,
-    std::vector<double> heights, const std::vector<std::string> &names,
+    const std::string& env_wkt, const std::vector<std::string> &areas,
+    const std::vector<double> &heights, const std::vector<std::string> &names,
     const std::vector<std::unordered_map<std::string, double>> &properties);
 
 
@@ -112,7 +112,7 @@ void test_random_generator_(Random_vecs &values, stype size);
 /* Getters functions */
 
 void get_environment_(
-    GEOSGeometry * &environment, std::vector<GEOSGeometry *> &areas,
+    std::string& env_wkt, std::vector<std::string> &areas,
     std::vector<double> &heights, std::vector<std::string> &names,
     std::vector<std::unordered_map<std::string, double>> &properties);
 

@@ -151,12 +151,12 @@ class SpaceManager : public ManagerInterface
         std::vector<double> &post_syn_x, std::vector<double> &post_syn_y);
 
     void set_environment(
-        GEOSGeom environment, const std::vector<GEOSGeom> &areas,
+        const std::string& env_wkt, const std::vector<std::string> &areas,
         const std::vector<double> &heights,
         const std::vector<std::string> &names,
         const std::vector<std::unordered_map<std::string, double>> &properties);
     void get_environment(
-        GEOSGeom &environment, std::vector<GEOSGeom> &areas,
+        std::string& env_wkt, std::vector<std::string> &areas,
         std::vector<double> &heights, std::vector<std::string> &names,
         std::vector<std::unordered_map<std::string, double>> &properties) const;
     const BRing& get_env_border(int omp_id) const;
