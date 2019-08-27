@@ -317,7 +317,7 @@ void GrowthCone::grow(mtPtr rnd_engine, stype cone_n, double substep)
                 interacting_ = sense_surroundings(
                     directions_weights, wall_presence, substep, rnd_engine);
             }
-            catch (const std::exception &except)
+            catch (...)
             {
                 std::throw_with_nested(std::runtime_error(
                     "Passed from `GrowthCone::sense_surroundings`."));
@@ -377,10 +377,10 @@ void GrowthCone::grow(mtPtr rnd_engine, stype cone_n, double substep)
                         make_move(directions_weights, new_pos_area,
                                   local_substep, rnd_engine, omp_id);
                     }
-                    catch (const std::exception &except)
+                    catch (...)
                     {
                         std::throw_with_nested(std::runtime_error(
-                            "Passed from `GrowthCone::make_move`."));
+                            "Passed from `GrowthCone::grow`."));
                     }
 
                     // assess stopped state (computed in make_move)
@@ -574,10 +574,18 @@ void GrowthCone::retraction(double distance, stype cone_n, int omp_id)
             {
                 kernel().space_manager.remove_object(box, info, omp_id);
 
-                kernel().space_manager.add_object(
-                    p1, new_p, get_diameter(), remaining,
-                    biology_.own_neurite->get_taper_rate(), info, biology_.branch,
-                    omp_id);
+                try
+                {
+                    kernel().space_manager.add_object(
+                        p1, new_p, get_diameter(), remaining,
+                        biology_.own_neurite->get_taper_rate(), info, biology_.branch,
+                        omp_id);
+                }
+                catch(...)
+                {
+                    std::throw_with_nested(std::runtime_error(
+                        "Passed from `GrowthCone::retraction`."));
+                }
             }
 
             distance = 0.;
@@ -725,7 +733,7 @@ void GrowthCone::make_move(const std::vector<double> &directions_weights,
 
         BLineString line = kernel().space_manager.line_from_points(
             geometry_.position, p);
-        
+
         bool update         = false;
         double min_distance = std::numeric_limits<double>::max();
         double radius       = 0.5*get_diameter();
@@ -754,7 +762,7 @@ void GrowthCone::make_move(const std::vector<double> &directions_weights,
         {
             if (kernel().space_manager.intersects("environment", line))
             {
-                // stop at `radius` from the environment 
+                // stop at `radius` from the environment
                 bool intsct = kernel().space_manager.get_point_at_distance(
                     line, "environment", radius, p, distance);
 
@@ -831,36 +839,40 @@ void GrowthCone::make_move(const std::vector<double> &directions_weights,
             delta_angle_ = new_angle - move_.angle;
             move_.angle  = new_angle;
 
-            // send the new segment to the space manager
-            // note the size - 1 inthe tuple because there is always one segment
-            // less than the number of points
-            try
+            if (not stopped_)
             {
-                kernel().space_manager.add_object(
-                    geometry_.position, p, get_diameter(), move_.module,
-                    biology_.own_neurite->get_taper_rate(),
-                    std::make_tuple(neuron_id_, neurite_name_, get_node_id(),
-                                    biology_.branch->size() - 1),
-                    biology_.branch, omp_id
-                );
-            }
-            catch (...)
-            {
-                std::throw_with_nested(std::runtime_error(
-                    "Passed from `GrowthCone::make_move`."));
-            }
+                // send the new segment to the space manager
+                // note the size - 1 in the tuple because there is always one
+                // less segment than the number of points
+                try
+                {
+                    kernel().space_manager.add_object(
+                        geometry_.position, p, get_diameter(), move_.module,
+                        biology_.own_neurite->get_taper_rate(),
+                        std::make_tuple(neuron_id_, neurite_name_,
+                                        get_node_id(),
+                                        biology_.branch->size() - 1),
+                        biology_.branch, omp_id
+                    );
+                }
+                catch (...)
+                {
+                    std::throw_with_nested(std::runtime_error(
+                        "Passed from `GrowthCone::make_move`."));
+                }
 
-            // store new position
-            geometry_.position = p;
+                // store new position
+                geometry_.position = p;
 
-            // check if we switched to a new area
-            std::string new_area =
-                kernel().space_manager.get_containing_area(p);
+                // check if we switched to a new area
+                std::string new_area =
+                    kernel().space_manager.get_containing_area(p);
 
-            if (new_area != current_area_)
-            {
-                update_growth_properties(new_area);
-                update_filopodia();
+                if (new_area != current_area_)
+                {
+                    update_growth_properties(new_area);
+                    update_filopodia();
+                }
             }
         }
     }
@@ -946,7 +958,7 @@ void GrowthCone::set_status(const statusMap &status)
                                     std::to_string(MIN_FILOPODIA_FINGER_LENGTH)
                                     + ".");
     }
-    
+
     filopodia_.finger_length = finger_length;
 
     if (min_filopodia_ < 10)
@@ -1050,7 +1062,7 @@ void GrowthCone::get_status(statusMap &status) const
 
     set_param(status, names::proba_retraction, proba_retraction_, "");
     set_param(status, names::duration_retraction, duration_retraction_, "minute");
-    
+
     // set affinities
     if (biology_.own_neurite != nullptr)
     {
@@ -1192,7 +1204,7 @@ void GrowthCone::change_sensing_angle(double angle)
     double old_sigma = move_.sigma_angle;
     // set the local modifier (1. if not using env)
     double area_modifier = 1.;
-    
+
     if (using_environment_)
     {
         AreaPtr area  = kernel().space_manager.get_area(current_area_);

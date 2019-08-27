@@ -233,7 +233,15 @@ void Neurite::grow(mtPtr rnd_engine, stype current_step, double substep)
         // compute and check growth cones' diameters for stop
         if (diameter > min_diameter_)
         {
-            gc.second->grow(rnd_engine, gc.first, substep);
+            try
+            {
+                gc.second->grow(rnd_engine, gc.first, substep);
+            }
+            catch (...)
+            {
+                std::throw_with_nested(std::runtime_error(
+                    "Passed from `Neurite::grow` in neurite '" + name_ + "'."));
+            }
 
             if (gc.second->stopped_ or gc.second->stuck_)
             {
@@ -694,8 +702,17 @@ GCPtr Neurite::create_branching_cone(const TNodePtr branching_node,
     // Branching::branching_event after the call to this function.
     if (not split)
     {
-        kernel().space_manager.add_object(
-            xy, p, new_diameter, dist_to_parent, taper_rate_, info, b, omp_id);
+        try
+        {
+            kernel().space_manager.add_object(
+                xy, p, new_diameter, dist_to_parent, taper_rate_, info, b, omp_id);
+        }
+        catch (...)
+        {
+            std::throw_with_nested(std::runtime_error(
+                "Passed from `Neurite::create_branching_cone` in neurite '"
+                + name_ + "'."));
+        }
 
         // this calls the TopologicalNode set_position
         sibling->set_position(p, parent_to_soma + dist_to_parent, b);
@@ -822,7 +839,7 @@ bool Neurite::lateral_branching(TNodePtr branching_node, stype branch_point,
         auto sibling = create_branching_cone(
             branching_node, new_node, dist_to_bp, new_cone_diam, xy,
             branch_direction + angle, false);
-        
+
         // check if sibling could indeed be created
         if (sibling != nullptr)
         {
@@ -897,7 +914,7 @@ bool Neurite::growth_cone_split(GCPtr branching_cone, double new_length,
     {
 
 #ifndef NDEBUG
-        std::cout << "\n\n\nSPLITTING\n" << "new_angle " << new_angle << 
+        std::cout << "\n\n\nSPLITTING\n" << "new_angle " << new_angle <<
         "new length " << new_length << "\n\n\n";
 #endif
 
@@ -919,7 +936,7 @@ bool Neurite::growth_cone_split(GCPtr branching_cone, double new_length,
         sibling = create_branching_cone(
             branching_cone, new_node, new_length, new_diameter,
             branching_cone->get_position(), direction + new_angle, true);
-        
+
         if (sibling != nullptr)
         {
             update_parent_nodes(new_node, branching_cone);

@@ -315,6 +315,7 @@ void Branching::update_splitting_cones(TNodePtr branching_cone,
         }
         catch(...)
         {
+            printf("got the error in Branching\n");
             std::throw_with_nested(std::runtime_error(
                 "Passed from `Neurite::growth_cone_split`."));
         }
@@ -328,7 +329,7 @@ void Branching::update_splitting_cones(TNodePtr branching_cone,
             old_cone->geometry_.position = pos1;
 
             double module = bg::distance(tmp, pos1);
-            
+
             kernel().space_manager.add_object(
                 tmp, pos1, branching_cone->get_diameter(), module,
                 neurite_->get_taper_rate(),
@@ -340,6 +341,7 @@ void Branching::update_splitting_cones(TNodePtr branching_cone,
         }
         catch(...)
         {
+            printf("got the error in Branching\n");
             std::throw_with_nested(std::runtime_error(
                 "Passed from `Neurite::growth_cone_split`."));
         }

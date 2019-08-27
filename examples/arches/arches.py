@@ -38,9 +38,9 @@ main_dir = current_dir[:current_dir.rfind("/")]
 Main parameters
 '''
 
-num_neurons = 10
+num_neurons = 100
 
-num_omp = 1
+num_omp = 8
 
 soma_radius = 3.
 use_uniform_branching = False
@@ -93,6 +93,9 @@ def step(time, loop_n, plot=True):
 
 
 if __name__ == '__main__':
+    # seed the numpy random number generators
+    np.random.seed(0)
+
     kernel = {
         "seeds": range(num_omp),
         "num_local_threads": num_omp,
@@ -110,7 +113,7 @@ if __name__ == '__main__':
         culture = ds.set_environment(culture_file, min_x=0, max_x=800)
         # generate the neurons inside the left chamber
         pos = culture.seed_neurons(
-            neurons=num_neurons, soma_radius=soma_radius)
+            neurons=num_neurons, soma_radius=soma_radius, ymax=800.)
         neuron_params['position'] = pos
     else:
         neuron_params['position'] = np.random.uniform(-1000, 1000, (200, 2)) * um
@@ -121,7 +124,14 @@ if __name__ == '__main__':
 
     ds.plot.plot_neurons(show=True)
 
-    # step(5 * day, 0, False)
+    try:
+        step(5 * day, 0, False)
+    except Exception as e:
+        print(e)
+    print("Simulation done")
 
-    # # prepare the plot
-    # ds.plot.plot_neurons(show_density=False, dstep=4., dmax=10, cmap="jet")
+    # prepare the plot
+    ds.plot.plot_neurons(show_density=False, dstep=4., dmax=10, cmap="jet",
+                         show_neuron_id=True)
+
+    print("All done")

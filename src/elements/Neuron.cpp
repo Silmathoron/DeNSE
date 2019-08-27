@@ -117,9 +117,18 @@ void Neuron::init_status(const statusMap &status, const statusMap &astatus,
     // send the soma to the space_manager
     int omp_id = kernel().parallelism_manager.get_thread_local_id();
 
-    kernel().space_manager.add_object(
-        get_position(), get_position(), 2*details.soma_radius, 0., 0.,
-        std::make_tuple(gid_, std::string(""), 0UL, 0UL), nullptr, omp_id);
+    try
+    {
+        kernel().space_manager.add_object(
+            get_position(), get_position(), 2*details.soma_radius, 0., 0.,
+            std::make_tuple(gid_, std::string(""), 0UL, 0UL), nullptr, omp_id);
+    }
+    catch (...)
+    {
+        std::throw_with_nested(std::runtime_error(
+            "Passed from `Neuron::init_status` in neuron "
+            + std::to_string(gid_) + "."));
+    }
 
     // prepare the neurites
     std::unordered_map<std::string, double> nas;
@@ -297,7 +306,16 @@ void Neuron::grow(mtPtr rnd_engine, stype current_step, double substep)
     {
         if (neurite.second->active_)
         {
-            neurite.second->grow(rnd_engine, current_step, substep);
+            try
+            {
+                neurite.second->grow(rnd_engine, current_step, substep);
+            }
+            catch (...)
+            {
+                std::throw_with_nested(std::runtime_error(
+                    "Passed from `Neuron::grow` in neuron "
+                    + std::to_string(gid_) + "."));
+            }
         }
     }
 }
@@ -365,7 +383,7 @@ std::string Neuron::new_neurite(const std::string &name,
 
             contained =
                 kernel().space_manager.env_contains(cone_start_point);
-            
+
             int num_test = 0;
 
             while (not contained and num_test < 1000)
@@ -378,7 +396,7 @@ std::string Neuron::new_neurite(const std::string &name,
                           position.y() + details.soma_radius * sin(angle));
                 contained =
                     kernel().space_manager.env_contains(cone_start_point);
-                
+
                 num_test++;
             }
 

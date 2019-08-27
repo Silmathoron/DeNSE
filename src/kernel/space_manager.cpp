@@ -178,6 +178,7 @@ void correct_polygon(
 
     if (mp.empty())
     {
+        std::cout << "empty multipoint\n";
         std::cout << bg::wkt(vec_step) << std::endl;
         std::cout << bg::wkt(front) << std::endl;
         std::cout << bg::wkt(side) << std::endl;
@@ -202,7 +203,7 @@ void correct_polygon(
         std::cout << bg::wkt(outer) << std::endl;
         std::cout << bg::wkt(old_p1) << std::endl;
         std::cout << bg::wkt(old_p2) << std::endl;
-        std::cout << bg::wkt(stop) << std::endl;
+        std::cout << bg::wkt(stop) << std::endl << std::flush;
 
         throw std::runtime_error("Empty intersection correcting polygon.");
     }
@@ -406,7 +407,7 @@ void SpaceManager::add_object(const BPoint &start, const BPoint &stop,
                     break;
                 }
 
-                if (count > 5)
+                if (count > 5 or not success)
                 {
                     success = false;
                     break;
@@ -414,19 +415,15 @@ void SpaceManager::add_object(const BPoint &start, const BPoint &stop,
                 count++;
             }
 
-#ifndef NDEBUG
-                if (not bg::is_valid(*(poly.get()), message))
-                {
-                    printf("difference is empty; invalid poly %s\n",
-                           message.c_str());
-                    std::cout << "last points: " << bg::wkt(old_lp1)
-                              << " " << bg::wkt(old_lp2)
-                              << std::endl;
-                    std::cout << bg::wkt(*(poly.get())) << std::endl;
-                    std::cout << bg::wkt(*(last_segment.get())) << std::endl;
-                    success = false;
-                }
-#endif
+            if (not bg::is_valid(*(poly.get()), message))
+            {
+                std::cout << "last points: " << bg::wkt(old_lp1)
+                            << " " << bg::wkt(old_lp2)
+                            << std::endl;
+                std::cout << bg::wkt(*(poly.get())) << std::endl;
+                std::cout << bg::wkt(*(last_segment.get())) << std::endl;
+                throw std::runtime_error("Invalid polygon: " + message);
+            }
 
             if (success)
             {
@@ -442,12 +439,10 @@ void SpaceManager::add_object(const BPoint &start, const BPoint &stop,
             BBox box = bg::return_envelope<BBox>(*(poly.get()));
             box_buffer_[omp_id].push_back(std::make_tuple(info, box, true));
         }
-#ifndef NDEBUG
         else
         {
-            printf("polygon addition failed: %s\n", message.c_str());
+            throw std::runtime_error("Could not correct polygon.");
         }
-#endif
     }
 }
 
