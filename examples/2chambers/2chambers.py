@@ -25,11 +25,9 @@ import shutil
 import time
 
 import numpy as np
-# import matplotlib
-# matplotlib.use("Qt5Agg")
+import matplotlib
+matplotlib.use("GTK3Agg")
 import matplotlib.pyplot as plt
-import random, shutil
-import os
 
 import nngt
 nngt.set_config("palette", "Spectral")
@@ -160,12 +158,16 @@ if __name__ == '__main__':
     gids = ds.create_neurons(n=200, culture=culture, params=neuron_params,
                             dendrites_params=dendrite_params, num_neurites=2)
 
+    print("neurons done")
+
     start = time.time()
     fig, ax = plt.subplots()
     # ~ for _ in range(10):
         # ~ step(200, 0, True)
-    step(5 * day, 0, False)
+    step(0.5 * day, 0, False)
     duration = time.time() - start
+
+    print("step done")
 
     # prepare the plot
     ds.plot.plot_neurons(gid=range(100), culture=culture, soma_alpha=0.8,
@@ -177,25 +179,24 @@ if __name__ == '__main__':
     ax.set_xlabel("x ($\mu$m)")
     ax.set_ylabel("y ($\mu$m)")
     ax.grid(False)
-    plt.show()
-    # ~ plt.show(block=True)
-    print("SIMULATION ENDED")
+    print("plot done")
+    # plt.show()
 
     # save
     save_path = CleanFolder(os.path.join(os.getcwd(), "2culture_swc"))
-    ds.save_json_info(filepath=save_path)
-    ds.SaveSwc(filepath=save_path, swc_resolution=10)
+    ds.io.save_to_swc(filename="2chambers_test.swc", resolution=10)
 
     #~ graph = ds.generate_network(method="spine_based", connection_proba=0.5)
     print("\nmaking graph\n")
-    graph = ds.generate_network(connection_proba=1)
+    graph = ds.morphology.generate_network(connection_proba=1)
+    print("graph generated")
+    print(graph.node_nb(), graph.edge_nb())
     population = nngt.NeuralPop(with_models=False)
     population.create_group("chamber_1", range(100))
     population.create_group("chamber_2", range(100, 200))
-    
+
     nngt.Graph.make_network(graph, population)
     print(graph.node_nb(), graph.edge_nb())
-
 
     graph.to_file("diode.el")
 
