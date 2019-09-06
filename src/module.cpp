@@ -660,22 +660,23 @@ void get_skeleton_(SkelNeurite &axon, SkelNeurite &dendrites,
 
 
 void get_geom_skeleton_(std::vector<stype> gids,
-                        std::vector<GEOSGeometry*>& axons,
-                        std::vector<GEOSGeometry*>& dendrites,
+                        std::vector<std::string>& axons,
+                        std::vector<std::string>& dendrites,
                         std::vector<stype>& dendrite_gids,
                         std::vector< std::vector<double> >& somas)
 {
     std::vector<GEOSGeometry *> vec;
-    //~ std::vector<BPolygon> vec_tmp;
-    //~ std::vector<BMultiPolygon> vec_geom;
     std::vector<BPolygon> vec_tmp, vec_geom;
 
     GEOSContextHandle_t ch = kernel().space_manager.get_context_handler();
     GEOSWKTReader *reader  = GEOSWKTReader_create_r(ch);
+    GEOSWKTWriter *writer  = GEOSWKTWriter_create_r(ch);
     GEOSGeometry *geom_tmp, *geom_union;
+
     std::stringstream s;
     BMultiPolygon mp;
     std::string wkt;
+    char *union_wkt;
     stype num_poly;
 
     for (stype gid : gids)
@@ -730,23 +731,25 @@ void get_geom_skeleton_(std::vector<stype> gids,
                 vec.push_back(geom_tmp);
             }
 
-            //~ // create the stupid collection to make the union
+            // create the stupid collection to make the union
             geom_tmp = GEOSGeom_createCollection_r(ch, GEOS_MULTIPOLYGON,
                                                    vec.data(), vec.size());
+
             geom_union = GEOSUnaryUnion_r(ch, geom_tmp);
 
             GEOSGeom_destroy_r(ch, geom_tmp);
 
+            union_wkt = GEOSWKTWriter_write_r(ch, writer, geom_union);
+            wkt       = std::string(union_wkt);
+
             if (neurite_it->second->get_type() == "axon")
             {
-                axons.push_back(geom_union);
-                //~ axons.insert(axons.end(), vec.begin(), vec.end());
+                axons.push_back(wkt);
             }
             else
             {
-                dendrites.push_back(geom_union);
+                dendrites.push_back(wkt);
                 dendrite_gids.push_back(gid);
-                //~ dendrites.insert(dendrites.end(), vec.begin(), vec.end());
             }
 
             vec.clear();
@@ -757,6 +760,9 @@ void get_geom_skeleton_(std::vector<stype> gids,
         BPoint soma = neuron->get_position();
         somas.push_back({soma.x(), soma.y(), neuron->get_soma_radius()});
     }
+
+    GEOSWKTReader_destroy_r(ch, reader);
+    GEOSWKTWriter_destroy_r(ch, writer);
 }
 
 

@@ -1739,10 +1739,8 @@ def _get_geom_skeleton(gid):
     py_nodes : 2-tuple
         Points describing the nodes.
     '''
-    from shapely.geometry.base import geom_factory
-
     cdef:
-        vector[GEOSGeometry*] axons, dendrites
+        vector[string] axons, dendrites
         vector[vector[double]] somas
         vector[stype] gids, dendrite_gids
 
@@ -1752,32 +1750,29 @@ def _get_geom_skeleton(gid):
         # creates a vector of size 1
         assert is_neuron_(gid) == "neuron", \
             "GID `{}` is not a neuron.".format(gid)
-        gids =  vector[stype](1, <stype>gid)
+        gids = vector[stype](1, <stype>gid)
     elif nonstring_container(gid):
         for n in gid:
             assert is_neuron_(n), "GID `{}` is not a neuron.".format(n)
             gids.push_back(<stype>n)
     else:
         raise ArgumentError("`gid` should be an int, a list, or None.")
+
     get_geom_skeleton_(gids, axons, dendrites, dendrite_gids, somas)
 
     py_axons, py_dendrites = {}, {}
 
     for i in range(axons.size()):
-        a           = axons[i]
-        pygeos_geom = <uintptr_t>a
-        if a is not NULL:
-            py_axons[gids[i]] = geom_factory(pygeos_geom)
+        py_axons[gids[i]] = loads(_to_string(axons[i]))
 
     for i in range(dendrites.size()):
-        d           = dendrites[i]
+        d           = _to_string(dendrites[i])
         gid_d       = dendrite_gids[i]
-        pygeos_geom = <uintptr_t>d
-        if d is not NULL:
-            if gid_d in py_dendrites:
-                py_dendrites[gid_d].append(geom_factory(pygeos_geom))
-            else:
-                py_dendrites[gid_d] = [geom_factory(pygeos_geom)]
+
+        if gid_d in py_dendrites:
+            py_dendrites[gid_d].append(loads(d))
+        else:
+            py_dendrites[gid_d] = [loads(d)]
 
     return py_axons, py_dendrites, np.array(somas).T
 

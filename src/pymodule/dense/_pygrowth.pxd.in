@@ -139,8 +139,8 @@ cdef extern from "../module.hpp" namespace "growth":
         vector[stype] gids, unsigned int resolution) except +
 
     cdef void get_geom_skeleton_(
-        vector[stype] gids, vector[GEOSGeometry*]& axons,
-        vector[GEOSGeometry*]& dendrites, vector[stype]& dendrite_gids,
+        vector[stype] gids, vector[string]& axons,
+        vector[string]& dendrites, vector[stype]& dendrite_gids,
         vector[vector[double]]& somas) except +
 
     cdef void generate_synapses_(

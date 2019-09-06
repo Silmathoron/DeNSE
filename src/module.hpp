@@ -180,8 +180,8 @@ void get_branches_data_(stype neuron, const std::string &neurite,
 
 
 void get_geom_skeleton_(std::vector<stype> gids,
-                        std::vector<GEOSGeometry*>& axons,
-                        std::vector<GEOSGeometry*>& dendrites,
+                        std::vector<std::string>& axons,
+                        std::vector<std::string>& dendrites,
                         std::vector<stype>& dendrite_gids,
                         std::vector< std::vector<double> >& somas);
 

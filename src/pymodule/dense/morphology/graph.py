@@ -164,7 +164,7 @@ class SpatialMultiNetwork(object):
                 self._edges[connection].add(enum + i)
 
             self._edge_nb += 1
-                
+
         for k, v in attributes.items():
             if k != "weight":
                 self._attributes[k].extend(v)
@@ -522,7 +522,7 @@ class SpatialNetwork(_BaseNetwork):
 
         assert self._nodes.issuperset(np.ravel(edge_list)), \
             "Some nodes in `edge_list` do not exist in the network."
-        
+
         if self.is_weighted() and "weight" not in attributes:
             attributes["weight"] = unit_strength*np.ones(len(edge_list))
 
@@ -646,9 +646,8 @@ class SpatialNetwork(_BaseNetwork):
                         else:
                             final_attrs[k].append(new_attrs[k][i])
 
-            new_attrs["multiplicity"] = np.ones(len(edge_list) - num_existing,
-                                                dtype=int)
-
             final_elist = list(edges.keys())
+
+            final_attrs["multiplicity"] = list(multiplicity.values())
 
             super(SpatialNetwork, self).new_edges(final_elist, final_attrs)

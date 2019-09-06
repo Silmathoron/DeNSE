@@ -127,7 +127,6 @@ def generate_network(source_neurons=None, target_neurons=None,
     Details on the connection algorithms are available on the graph generation
     page in the user manual.
     """
-    print("entering generate_network")
     edges     = kwargs.get("edges", None)
     positions = kwargs.get("positions", None)
     distances = kwargs.get("distances", None)
@@ -185,7 +184,6 @@ def generate_network(source_neurons=None, target_neurons=None,
 
     network.new_edges(edges, attributes=data)
 
-    print("exiting generate_network")
     return network
 
 
@@ -257,7 +255,6 @@ def get_connections(source_neurons=None, target_neurons=None,
         Approximation of the cable distance between the neurons, given by the
         sum of the distances between the somas and the synapse.
     """
-    print("entering get_connections")
     crossings_only, max_spine_length = None, None
 
     if method == "intersections":
@@ -301,7 +298,6 @@ def get_connections(source_neurons=None, target_neurons=None,
                 source_set, target_set, axons, dendrites, soma_pos, syn_density,
                 connection_probability, autapse_allowed, max_spine_length)
 
-    print("exiting get_connections")
     return edges, positions, distances
 
 
@@ -315,14 +311,16 @@ def _get_synapses_intersection(axon_polygon, d_polygon, synapse_density, somas,
     '''
     Tool fuction to find synapses of intersecting neurites
     '''
-    print("getting synapse from intersection")
     intsct = axon_polygon.intersection(d_polygon)
-    print("got intersection from", axon_polygon.area, d_polygon.area)
-    print("intersection si empty?", intsct.is_empty, intsct.geom_type)
-    print("area:", intsct.area)
 
     if not isinstance(intsct, MultiPolygon):
         intsct = [intsct]
+
+    # if intsct.area != 0.:
+    #     if not isinstance(intsct, MultiPolygon):
+    #         intsct = [intsct]
+    # else:
+    #     intsct = []
 
     for poly in intsct:
         total        = poly.area * synapse_density * connection_probability
@@ -339,7 +337,6 @@ def _get_synapses_intersection(axon_polygon, d_polygon, synapse_density, somas,
             positions.extend([pos]*num_synapses)
             edges.extend([etuple]*num_synapses)
             distances.extend([dist]*num_synapses)
-    print("out of synapse from intersection")
 
 
 def _edges_from_intersections(source_set, target_set, axons, dendrites,
@@ -348,12 +345,9 @@ def _edges_from_intersections(source_set, target_set, axons, dendrites,
     """
     Obtain synapses with a simple approach based only on neurite intersections.
     """
-    print("entering _edges_from_intersections")
     edges, positions, distances = [], [], []
 
     for i, (axon_gid, axon_polygon) in enumerate(axons.items()):
-        print("axon")
-        print(axon_polygon.is_empty)
         if axon_gid in source_set:
             for j, (dend_gid, vd) in enumerate(dendrites.items()):
                 connection_allowed = (dend_gid != axon_gid or autapse_allowed)
@@ -361,15 +355,12 @@ def _edges_from_intersections(source_set, target_set, axons, dendrites,
                 if dend_gid in target_set and connection_allowed:
                     etuple = (axon_gid, dend_gid)
                     for d_polygon in vd:
-                        print("dendrite polygon")
-                        print(d_polygon.is_empty)
                         if axon_polygon.intersects(d_polygon):
                             _get_synapses_intersection(
                                 axon_polygon, d_polygon, synapse_density,
                                 somas, connection_probability, etuple, i, j,
                                 edges, positions, distances)
 
-    print("exiting _edges_from_intersections")
     return edges, positions, distances
 
 

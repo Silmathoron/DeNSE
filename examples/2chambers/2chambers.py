@@ -31,7 +31,6 @@ import matplotlib.pyplot as plt
 
 import nngt
 nngt.set_config("palette", "Spectral")
-#~ nngt.set_config("palette", "viridis")
 
 import dense as ds
 from dense.units import *
