@@ -20,7 +20,7 @@
 # along with DeNSE. If not, see <http://www.gnu.org/licenses/>.
 
 
-""" Tools relaetd to neuronal structure """
+""" Tools related to neuronal structure """
 
 from . import algorithms
 
