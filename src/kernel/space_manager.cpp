@@ -325,6 +325,22 @@ void SpaceManager::add_object(const BPoint &start, const BPoint &stop,
                         outer.push_back(lp_1);
                         outer.push_back(old_lp2);
                         outer.push_back(old_lp1);
+
+                        checked_order = true;
+
+                        if (not bg::is_valid(*(poly.get()), failure))
+                        {
+                            if (failure == bg::failure_self_intersections)
+                            {
+                                // this was not the reason, restore order
+                                outer.clear();
+                                outer.push_back(old_lp1);
+                                outer.push_back(lp_1);
+                                outer.push_back(lp_2);
+                                outer.push_back(old_lp2);
+                                outer.push_back(old_lp1);
+                            }
+                        }
                     }
                     else if (bg::covered_by(stop, *(last_segment.get())))
                     {
