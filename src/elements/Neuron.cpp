@@ -126,8 +126,7 @@ void Neuron::init_status(const statusMap &status, const statusMap &astatus,
     catch (...)
     {
         std::throw_with_nested(std::runtime_error(
-            "Passed from `Neuron::init_status` in neuron "
-            + std::to_string(gid_) + "."));
+            "Passed from `Neuron::init_status`."));
     }
 
     // prepare the neurites

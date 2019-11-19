@@ -317,7 +317,7 @@ void Branching::update_splitting_cones(TNodePtr branching_cone,
         {
             printf("got the error in Branching\n");
             std::throw_with_nested(std::runtime_error(
-                "Passed from `Neurite::growth_cone_split`."));
+                "Passed from `Branching::update_splitting_cones`."));
         }
     }
 
@@ -343,7 +343,7 @@ void Branching::update_splitting_cones(TNodePtr branching_cone,
         {
             printf("got the error in Branching\n");
             std::throw_with_nested(std::runtime_error(
-                "Passed from `Neurite::growth_cone_split`."));
+                "Passed from `Branching::update_splitting_cones`."));
         }
     }
 

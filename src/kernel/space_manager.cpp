@@ -307,6 +307,7 @@ void SpaceManager::add_object(const BPoint &start, const BPoint &stop,
 
             // check whether this did not create a self-crossing
             unsigned int count = 0;
+            bool checked_order = false;
 
             while (not bg::is_valid(*(poly.get()), failure))
             {
@@ -315,13 +316,18 @@ void SpaceManager::add_object(const BPoint &start, const BPoint &stop,
                     // self intersecting clear it up
                     outer.clear();
 
-                    if (bg::covered_by(stop, *(last_segment.get())))
+                    // simplest explanation is that the order of the points is wrong
+                    // invert lp_1 and lp_2
+                    if (not checked_order)
                     {
                         outer.push_back(old_lp1);
-                        outer.push_back(lp_1);
                         outer.push_back(lp_2);
+                        outer.push_back(lp_1);
                         outer.push_back(old_lp2);
                         outer.push_back(old_lp1);
+                    }
+                    else if (bg::covered_by(stop, *(last_segment.get())))
+                    {
                         std::cout << std::get<0>(info) << " "
                                     << std::get<1>(info)
                                     << " " << std::get<2>(info) << " "

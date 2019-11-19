@@ -710,7 +710,7 @@ GCPtr Neurite::create_branching_cone(const TNodePtr branching_node,
         catch (...)
         {
             std::throw_with_nested(std::runtime_error(
-                "Passed from `Neurite::create_branching_cone` in neurite '"
+                "Passed from `Neurite::create_branching_cone`.'"
                 + name_ + "'."));
         }
 

@@ -572,10 +572,10 @@ void GrowthCone::retraction(double distance, stype cone_n, int omp_id)
             // we remove the previous object and add the new, shorter one
             if (poly != nullptr)
             {
-                kernel().space_manager.remove_object(box, info, omp_id);
-
                 try
                 {
+                    kernel().space_manager.remove_object(box, info, omp_id);
+
                     kernel().space_manager.add_object(
                         p1, new_p, get_diameter(), remaining,
                         biology_.own_neurite->get_taper_rate(), info, biology_.branch,
