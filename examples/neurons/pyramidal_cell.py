@@ -51,7 +51,7 @@ neuron_params = {
 
     # axon versus dendrites orientations
     "polarization_strength": 20.,
-    "neurite_angles": {"axon": 90.*deg, "dendrite_1": 210.*deg, "dendrite_2": 310.*deg},
+    "neurite_angles": {"axon": 90.*deg, "dendrite_1": 200.*deg, "dendrite_2": 320.*deg},
 }
 
 axon_params = {
@@ -196,3 +196,5 @@ ds.set_object_properties(n, dendrites_params=dend_params, axon_params=vp_axon)
 ds.simulate(20*day)
 
 ds.plot.plot_neurons(scale_text=False)
+
+n.to_swc("pyramidal-cell.swc")

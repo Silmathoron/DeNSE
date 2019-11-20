@@ -169,11 +169,6 @@ ds.plot.plot_neurons(show=True)
 ds.io.save_to_swc("chandelier-cell.swc", gid=n, resolution=50)
 
 tree = n.axon.get_tree()
-
-plt.axis('off')
-fig.suptitle("")
-plt.tight_layout()
-plt.show()
 tree.show_dendrogram()
 
 print("Asymmetry of axon:", ds.structure.tree_asymmetry(n[0].axon))

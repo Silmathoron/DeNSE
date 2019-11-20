@@ -42,10 +42,11 @@ def max_asym(n):
 sns.set(style="white", rc={"axes.facecolor": (0, 0, 0, 0)}, font_scale=1.5)
 
 
-# ~ filename = "starbust-amacrine-cell.swc"
-# ~ filename = "pyramidal-cell.swc"
+# ~ filename = "starbust-amacrine.swc"
+# ~ filename = "starbust-amacrine-rt.swc"
+filename = "pyramidal-cell.swc"
 # ~ filename = "granule-cell.swc"
-filename = "chandelier-cell.swc"
+# ~ filename = "chandelier-cell.swc"
 
 nrn = nm.load_neuron(filename)
 

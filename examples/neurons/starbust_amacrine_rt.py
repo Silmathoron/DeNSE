@@ -112,6 +112,8 @@ ds.simulate(8.*day)
 
 ds.plot.plot_neurons(scale_text=False)
 
+n.to_swc("starbust-amacrine-rt.swc")
+
 # tree = n[0].dendrites["dendrite_1"].get_tree()
 # tree.show_dendrogram()
 
