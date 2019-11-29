@@ -434,49 +434,6 @@ class Neurite(object):
     def get_tree(self):
         return _pg._get_tree(self._parent, str(self))
 
-    def get_properties(self, property_name=None):
-        '''
-        Get the neurite's properties.
-
-        Parameters
-        ----------
-        property_name : str, optional (default: None)
-            Name of the property that should be queried. By default, the full
-            dictionary is returned.
-
-        Returns
-        -------
-        status : variable
-            Properties of the neurite: a single value if
-            `property_name` was specified, the full status ``dict`` otherwise.
-        
-        See also
-        --------
-        :func:`~dense.get_object_properties`,
-        :func:`~dense.elements.Neurite.set_properties`,
-        :func:`~dense.elements.Neuron.get_properties`.
-        '''
-        return _pg.get_object_properties(self._parent, property_name=property_name,
-                                         neurite=self)
-
-    def set_properties(self, params):
-        '''
-        Update the neurite parameters using the entries contained in `params`.
-
-        Parameters
-        ----------
-        params : dict
-            New neurite parameters.
-
-        See also
-        --------
-        :func:`~dense.set_object_properties`,
-        :func:`~dense.elements.Neurite.get_properties`,
-        :func:`~dense.elements.Neuron.set_properties`.
-        '''
-        return _pg.set_neurite_properties(self._parent, self, params=params)
-
-
     @property
     def name(self):
         ''' Name of the neurite '''
@@ -693,11 +650,11 @@ class Node(int):
     def distance_to_soma(self):
         dts = self.dist_to_parent
 
-        node = self.parent
+        node = self._tree.get(self.parent, None)
 
         while node is not None:
-            dts += parent.dist_to_parent
-            node = node.parent
+            dts += node.dist_to_parent
+            node = self._tree.get(node.parent, None)
 
         return dts
 
@@ -987,7 +944,7 @@ class Population(list):
         '''
         add population
         '''
-        from .io import GetSWCStructure as _get_swc_struct
+        from .io.data_swc import GetSWCStructure as _get_swc_struct
 
         for neuron in neurons:
             gid = neurons[neuron]['gid']

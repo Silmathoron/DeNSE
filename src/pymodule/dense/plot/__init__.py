@@ -24,12 +24,13 @@ Plotting module
 ===============
 """
 
-from plot_recording import plot_recording
-from plot_structures import plot_neurons, plot_environment
+from .plot_recording import plot_recording
+from .plot_structures import plot_neurons, plot_environment, plot_dendrogram
 
 
 __all__ = [
-    "plot_recording",
+    "plot_dendrogram",
+    "plot_environment",
     "plot_neurons",
-    "plot_environment"
+    "plot_recording",
 ]

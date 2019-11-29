@@ -23,6 +23,7 @@
 
 from collections import deque
 
+import matplotlib
 from matplotlib.cm import get_cmap
 from matplotlib.patches import Rectangle
 from matplotlib.patches import PathPatch
@@ -126,6 +127,8 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
     else:
         ax = axis
         fig = axis.get_figure()
+
+    fig.patch.set_alpha(0.)
     new_lines = 0
 
     # plotting options
@@ -343,11 +346,14 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
     **kwargs : arguments for :class:`matplotlib.patches.Rectangle`
         For instance `facecolor` or `edgecolor`.
     '''
-    tree     = neurite.get_tree()
-    branches = neurite.branches
+    import matplotlib.pyplot as plt
+
+    tree = neurite.get_tree()
 
     if axis is None:
         fig, axis = plt.subplots()
+
+    fig = axis.get_figure()
 
     facecolor = kwargs.get("facecolor", "k")
     edgecolor = kwargs.get("edgecolor", "none")
@@ -358,73 +364,108 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
     # compute the size of the vertical spacing between branches
     # this should be 5 times the diameter of the first section and there
     # are num_tips + 1 spacing in total.
-    init_diam  = tree.root.diameter
+    init_diam  = tree.root.children[0].diameter
     vspace     = 5*init_diam
-    tot_height = (num_tips + 1) * vspace
+    tot_height = (num_tips + 0.5) * vspace
 
     # compute the total length which is 1.1 times the longest distance
     # to soma
     max_dts    = np.max([n.distance_to_soma() for n in tree.tips])
-    tot_length = 1.1*max_dts
+    tot_length = 1.02*max_dts
 
     # we need to find the number of up and down children for each node
-    queue = deque(tree.root)
+    queue = deque(tree.root.children)
 
     up_children   = {}
     down_children = {}
 
     while queue:
-        node = queue.popleft()
+        node = tree[queue.popleft()]
         queue.extend(node.children)
 
         if node.children:
-            up_children[node]   = set(node.children[0])
-            down_children[node] = set(node.children[1])
+            up_children[node]   = {node.children[0]}
+            down_children[node] = {node.children[1]}
 
-        if node in up_children.get(node.parent, False):
+        if node in up_children.get(node.parent, []):
             for val in up_children.values():
-                if node.parent is in val:
-                    val.add(node)
+                if node.parent in val:
+                    val.add(int(node))
 
-        if node in down_children.get(node.parent, False):
+        if node in down_children.get(node.parent, []):
             for val in down_children.values():
-                if node.parent is in val:
-                    val.add(node)
+                if node.parent in val:
+                    val.add(int(node))
 
     # now we can plot the dendrogram
-    x0 = 0.05*max_dts
+    x0 = 0.01*max_dts
 
-    parent_y = {}
+    parent_x   = {}
+    parent_y   = {}
+    children_y = {int(tree.root): []}
 
-    queue = deque(tree.root.children[0])
+    queue = deque(tree.root.children)
 
     while queue:
-        node = queue.popleft()
+        node = tree[queue.popleft()]
         queue.extend(node.children)
 
-        x = x0
-
-        if node.parent is not None:
-            x += node.parent.distance_to_soma()
-
-        num_up   = len(up_children[node])
-        num_down = len(down_children[node])
+        x = x0 + tree[node.parent].distance_to_soma()
 
         # get parent y
-        y = parent_y.get(node.parent, 0.5*vspace)
+        y = parent_y.get(node.parent, 0.25*vspace)
 
-        if node in up_children.get(node.parent, True):
+        num_up, num_down = 0.5, 0.5
+
+        if node.children:
+            num_up   = len(up_children[int(node)])
+            num_down = len(down_children[int(node)])
+
+            children_y[int(node)] = []
+
+        if node in up_children.get(node.parent, [node]):
             y += num_down*vspace - 0.5*node.diameter
         else:
             y -= num_up*vspace + 0.5*node.diameter
 
+        parent_y[int(node)] = y
+        parent_x[int(node)] = x + node.dist_to_parent
+        children_y[node.parent].append(y)
+
         axis.add_artist(
-            Rectangle((x, y), node.distance_to_parent, node.diameter,
+            Rectangle((x, y), node.dist_to_parent, node.diameter,
                       fill=True, facecolor=facecolor,
                       edgecolor=edgecolor))
 
+    # last iteration for vertical connections
+    queue = deque(tree.root.children)
+
+    hv_ratio = tot_length/tot_height
+
+    while queue:
+        node = tree[queue.popleft()]
+        queue.extend(node.children)
+
+        d = node.diameter*hv_ratio
+
+        if node.children:
+            x      = parent_x[int(node)] - 0.25*d
+            y1, y2 = children_y[int(node)]
+
+            y1, y2 = min(y1, y2), max(y1, y2)
+
+            axis.add_artist(
+                Rectangle((x, y1), 0.5*d, (y2 - y1) + 0.5*node.diameter,
+                          fill=True, facecolor=facecolor, edgecolor=edgecolor))
+
     axis.set_xlim(0, tot_length)
     axis.set_ylim(0, tot_height)
+
+    plt.axis('off')
+    fig.patch.set_alpha(0.)
+
+    if show:
+        plt.show()
 
 
 
@@ -467,5 +508,6 @@ def plot_environment(culture=None, title='Environment', ax=None, m='',
     '''
     if culture is None:
         culture = _pg.get_environment()
+
     plot_shape(culture, axis=ax,  m=m, mc=mc, fc=fc, ec=ec, alpha=alpha,
                brightness=brightness, show=show)

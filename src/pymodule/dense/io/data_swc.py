@@ -26,7 +26,7 @@ from os.path import join, isfile
 import numpy as np
 
 from .. import _pygrowth as _pg
-from ..elements import Neuron
+from ..elements import Neuron, Population
 
 
 __all__ = [
@@ -114,7 +114,7 @@ def NeuronsFromSimulation(simulation_path):
         print("WARNING: {} not found: Neurons have already been "
               "split".format(os.path.join(simulation_path,"morphology.swc")))
         imported_list = [
-            os.path.join(simulation_path, f) for f in listdir(simulation_path)
+            os.path.join(simulation_path, f) for f in os.listdir(simulation_path)
             if f.endswith(".swc") and f != "morphology.swc"
         ]
 

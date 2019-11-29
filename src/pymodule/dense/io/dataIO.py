@@ -31,16 +31,14 @@ from .. import _pygrowth as _pg
 from .._helpers import nonstring_container, is_iterable
 from ..elements import Population, Neuron
 from ..units import *
-from .dataIO_swc import ImportSwc
 
 
 __all__ = [
-    "ImportRecordFile",
-    "ImportSwc",
-    "NeuronsFromSimulation",
+    # "ImportRecordFile",
+    # "NeuronsFromSimulation",
     "save_json_info",
     "save_to_neuroml",
-    "SimulationsFromFolder"
+    # "SimulationsFromFolder"
 ]
 
 
@@ -152,13 +150,17 @@ def SimulationsFromFolder(simulation_folder):
     '''
     Import different DeNSE simulations from folder.
     '''
-    simulation_folder =os.path.join(os.getcwd(),simulation_folder)
+    from data_swc import NeuronsFromSimulation
+
+    simulation_folder = os.path.join(os.getcwd(),simulation_folder)
     morph = os.path.join(simulation_folder,"morphology.swc")
+
     if os.path.isfile(morph):
         simulations= NeuronsFromSimulation(simulation_folder)
     else:
         neuronfiles = [os.path.join(simulation_folder, f) for f in listdir(simulation_folder) if os.path.isdir(os.path.join(simulation_folder, f))]
         simulations = map(NeuronsFromSimulation, neuronfiles)
+
     return simulations
 
 
