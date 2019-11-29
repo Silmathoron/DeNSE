@@ -690,6 +690,17 @@ class Node(int):
         self._tree[int(child)] = child
         child.parent           = self
 
+    def distance_to_soma(self):
+        dts = self.dist_to_parent
+
+        node = self.parent
+
+        while node is not None:
+            dts += parent.dist_to_parent
+            node = node.parent
+
+        return dts
+
 
 class Tree(dict):
 
@@ -698,6 +709,7 @@ class Tree(dict):
         self._neuron    = neuron
         self._neurite   = neurite
         self._root      = None
+        self._tips      = set()
         self._tips_set  = False
 
     @property
@@ -725,10 +737,10 @@ class Tree(dict):
         self._tips_set = False
 
     def update_tips(self):
-        self._tips = []
+        self._tips = set()
         for key, val in self.items():
             if not val.children:
-                self._tips.append(val)
+                self._tips.add(val)
         self._tips_set = True
 
     def neurom_tree(self):

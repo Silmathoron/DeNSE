@@ -136,10 +136,14 @@ rec = ds.create_recorders(n, "num_growth_cones")
 
 ds.simulate(10*day)
 
-print(ds.get_kernel_status('time'))
+t = n.axon.get_tree()
 
-recording = ds.get_recording(rec, record_format="compact")
-print(recording)
+print(t.root.children)
+print(t.root.children[0].children)
+
+print(t.root.dist_to_parent)
+print(t.root.children[0].dist_to_parent)
+
 
 ds.plot.plot_neurons(mode="mixed", show=True)
 
