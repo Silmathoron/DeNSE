@@ -32,27 +32,34 @@
 namespace growth
 {
 
-BaseNode::BaseNode() : geometry_{}
+BaseNode::BaseNode()
+  : position_(BPoint())
+  , dist_to_soma_(-1)
+  , dist_to_parent_(-1)
 {}
 
 BaseNode::BaseNode(const BPoint &position, double distance_to_parent,
          double distance_to_soma)
-  : geometry_{position, distance_to_soma, distance_to_parent}
+  : position_(position)
+  , dist_to_soma_(distance_to_soma)
+  , dist_to_parent_(distance_to_parent)
 {}
 
 BaseNode::BaseNode(const BaseNode &copy)
-  : geometry_(copy.geometry_)
+  : position_(copy.position_)
+  , dist_to_soma_(copy.dist_to_soma_)
+  , dist_to_parent_(copy.dist_to_parent_)
 {}
 
 // BaseNode functions
 
-void BaseNode::set_position(const BPoint &pos) { geometry_.position = pos; }
+void BaseNode::set_position(const BPoint &pos) { position_ = pos; }
 
 
-double BaseNode::get_distance_to_soma() const { return geometry_.dis_to_soma; }
+double BaseNode::get_distance_to_soma() const { return dist_to_soma_; }
 
 
-BPoint BaseNode::get_position() const { return geometry_.position; }
+BPoint BaseNode::get_position() const { return position_; }
 
 
 int BaseNode::get_centrifugal_order() const { return -1; }
@@ -63,41 +70,58 @@ stype BaseNode::get_node_id() const { return 0; }
 
 double BaseNode::get_distance_parent() const
 {
-    return geometry_.dis_to_parent;
+    return dist_to_parent_;
 };
 
 
 // TopologicalNode functions
-//
 
 TopologicalNode::TopologicalNode()
     : BaseNode()
-    , topology_{}
-    , biology_{}
+    // topological properties
+    , parent_(std::make_shared<BaseNode>())
+    , centrifugal_order_(-1)
+    , has_child_(false)
+    , node_id_(0)
+    // biological properties
+    , dead_(false)
+    , branch_(std::make_shared<Branch>())
+    , own_neurite_(nullptr)
+    , diameter_(0)
 {}
 
 
 TopologicalNode::TopologicalNode(const TopologicalNode &tnode)
     : BaseNode(tnode)
-    , topology_(tnode.topology_)
-    , biology_(tnode.biology_)
-{
-    topology_.has_child = false;
-}
+    , parent_(tnode.parent_)
+    , centrifugal_order_(tnode.centrifugal_order_)
+    , has_child_(false)
+    , node_id_(0)
+    , dead_(false)
+    , branch_(std::make_shared<Branch>())
+    , own_neurite_(tnode.own_neurite_)
+    , diameter_(tnode.diameter_)
+{}
 
 
-TopologicalNode::TopologicalNode(BaseWeakNodePtr parent, float distanceToParent,
-                                 const BPoint &position)
+TopologicalNode::TopologicalNode(BaseWeakNodePtr parent, double distanceToParent,
+                                 const BPoint &position, double diameter)
     : BaseNode(position, distanceToParent,
                distanceToParent + parent.lock()->get_distance_to_soma())
-    , topology_{parent, parent.lock()->get_centrifugal_order() + 1, false, 0}
-    , biology_{false, std::make_shared<Branch>(), nullptr, 1}
+    , parent_(parent)
+    , centrifugal_order_(parent.lock()->get_centrifugal_order() + 1)
+    , has_child_(false)
+    , node_id_(0)
+    , dead_(false)
+    , branch_(std::make_shared<Branch>())
+    , own_neurite_(nullptr)
+    , diameter_(diameter)
 {}
 
 
 void TopologicalNode::topological_advance()
 {
-    topology_.centrifugal_order++;
+    centrifugal_order_++;
 }
 
 
@@ -110,7 +134,7 @@ void TopologicalNode::topological_advance()
  */
 void TopologicalNode::set_first_point(const BPoint &p, double length)
 {
-    biology_.branch->set_first_point(p, length);
+    branch_->set_first_point(p, length);
 }
 
 
@@ -121,39 +145,45 @@ void TopologicalNode::set_position(const BPoint &pos)
 }
 
 
-void TopologicalNode::set_position(const BPoint &pos, double dist_to_soma,
-                                   BranchPtr b)
+void TopologicalNode::update_branch_and_parent(BaseNodePtr parent,
+                                               BranchPtr b)
 {
-    geometry_.position    = pos;
-    geometry_.dis_to_soma = dist_to_soma;
-    geometry_.dis_to_parent =
-        dist_to_soma - topology_.parent.lock()->get_distance_to_soma();
+    // update parent
+    parent_ = parent;
 
-    biology_.branch = b;
+    double old_dts = dist_to_parent_;
+
+    dist_to_parent_ =
+        dist_to_soma_ - parent->get_distance_to_soma();
+
+    if (dist_to_parent_ < 0)
+        printf("Updated a node with negative dts %f from %f; source were %f and %f\n", dist_to_parent_, old_dts, dist_to_soma_, parent->get_distance_to_soma());
+
+    branch_ = b;
 }
 
 
 void TopologicalNode::set_diameter(double diameter)
 {
-    biology_.diameter = diameter;
+    diameter_ = diameter;
 }
 
 
 stype TopologicalNode::get_branch_size() const
 {
-    return biology_.branch->size();
+    return branch_->size();
 }
 
 
 double TopologicalNode::get_branch_length() const
 {
-    return biology_.branch->get_length();
+    return branch_->get_length();
 }
 
 
 seg_range TopologicalNode::segment_range() const
 {
-    return biology_.branch->segment_range();
+    return branch_->segment_range();
 }
 
 
@@ -172,28 +202,11 @@ Growth cone constructor:
 \param BranchParentID is the relative name respect to the parent,
 necessary for build the Id
 */
-Node::Node(BaseWeakNodePtr parent, float distance, const BPoint &pos)
-  : TopologicalNode(parent, distance, pos)
+Node::Node(BaseWeakNodePtr parent, double distance, const BPoint &pos,
+           double diameter)
+  : TopologicalNode(parent, distance, pos, diameter)
 {
-    topology_.has_child = true;
-}
-
-
-/**lateral_branching_angle_mean
- * Modified Node copy constructor,
- * used to copy a GrowthCone into a standard Node after a branching
- * event.
- */
-Node::Node(const TopologicalNode &copyTopoNode)
-  : TopologicalNode(copyTopoNode)
-{
-}
-
-
-Node::Node(const Node &copyNode)
-  : TopologicalNode(copyNode)
-{
-    topology_.has_child = true;
+    has_child_ = true;
 }
 
 
