@@ -559,18 +559,6 @@ void Neurite::gc_split_angles_diameter(mtPtr rnd_engine, double &old_angle,
 
     new_angle = -branching_angle / 2. - half_tang;
     old_angle = +branching_angle / 2. - half_tang;
-
-//~ #ifndef NDEBUG
-    //~ printf("@@@@@  Growth cone split @@@@@ \n"
-           //~ "gc_split angle distribution: %f, +- %f, eta_expo: %f, "
-           //~ "diam_variance: %f \n"
-           //~ "the branching angle is %f, new_angle: %f, old_angle %f \n"
-           //~ "the new diameters are: %f , %f, ratio: %f\n,",
-           //~ gc_split_angle_mean_ * 180 / M_PI, gc_split_angle_std_ * 180 / M_PI,
-           //~ diameter_eta_exp_, diameter_variance_, branching_angle * 180 / M_PI,
-           //~ new_angle * 180 / M_PI, old_angle * 180 / M_PI, new_diameter,
-           //~ old_diameter, ratio);
-//~ #endif
 }
 
 
@@ -810,8 +798,12 @@ bool Neurite::lateral_branching(TNodePtr branching_node, stype branch_point,
             update_parent_nodes(new_node, branching_node);
 
             // update the existing node
+            new_node->branch_ = std::make_shared<Branch>(
+                *(branching_node->branch_.get()));
+
             branching_node->branch_ =
                 new_node->branch_->resize_head(branch_point);
+
             branching_node->set_first_point(xy, distance_to_soma);
 
             // update the new node's branch
@@ -1061,9 +1053,6 @@ bool Neurite::walk_tree(NodeProp& np) const
 
         // get distance to parent
         dtp = n_it->second->get_distance_parent();
-
-        if (dtp < 0)
-            printf("node %lu has negative dtp %f\n", n_it->first, dtp);
 
         // get position (root of the branch)
         BPoint p = n_it->second->get_position();

@@ -45,11 +45,11 @@ Branch::Branch(const Branch &copy)
     , segments_(copy.segments_)
 {
     points_[0].insert(points_[0].end(), copy.points_[0].begin(),
-                     copy.points_[0].end());
-    points_[1].insert(points_[1].end(), copy.points_[0].begin(),
-                     copy.points_[1].end());
+                      copy.points_[0].end());
+    points_[1].insert(points_[1].end(), copy.points_[1].begin(),
+                      copy.points_[1].end());
     points_[2].insert(points_[2].end(), copy.points_[2].begin(),
-                     copy.points_[2].end());
+                      copy.points_[2].end());
 }
 
 
@@ -212,6 +212,7 @@ void Branch::restypeail(stype new_size)
 BranchPtr Branch::resize_head(stype id_x) const
 {
     assert(size() > id_x);
+
     BranchPtr new_branch = std::make_shared<Branch>();
 
     new_branch->points_[0].insert(
