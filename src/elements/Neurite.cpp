@@ -573,7 +573,7 @@ void Neurite::update_parent_nodes(NodePtr new_node, TNodePtr branching)
     assert(new_node->get_parent().lock() == branching->get_parent().lock());
 
     NodePtr parent_node = nodes_[new_node->get_parent().lock()->get_node_id()];
-    assert(parent_node->get_node_id() >= 0);
+
     assert(parent_node->has_child() == true);
 
     for (stype i = 0; i < parent_node->children_.size(); i++)
@@ -1054,6 +1054,9 @@ bool Neurite::walk_tree(NodeProp& np) const
         // get distance to parent
         dtp = n_it->second->get_distance_parent();
 
+        if (dtp != n_it->second->get_branch_length())
+            printf("node dtp %f != branch length %f\n", dtp, n_it->second->get_branch_length());
+
         // get position (root of the branch)
         BPoint p = n_it->second->get_position();
         std::vector<double> coords({p.x(), p.y()});
@@ -1078,8 +1081,13 @@ bool Neurite::walk_tree(NodeProp& np) const
         {
             pid = nid;
         }
+
         // get distance to parent
-        dtp = gc_it->second->get_branch()->get_length();
+        dtp = gc_it->second->get_branch_length();
+
+        if (dtp != gc_it->second->get_branch_length())
+            printf("gc dtp %f != branch length %f\n", dtp, gc_it->second->get_distance_parent());
+
         // get diameter (average between root and tip)
         diam = gc_it->second->get_diameter() + 0.5*dtp*taper_rate_;
         // get position
