@@ -400,6 +400,8 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
     # now we can plot the dendrogram
     x0 = 0.01*max_dts
 
+    hv_ratio = tot_length/tot_height
+
     parent_x   = {}
     parent_y   = {}
     children_y = {int(tree.root): []}
@@ -410,7 +412,9 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
         node = tree[queue.popleft()]
         queue.extend(node.children)
 
-        x = x0 + tree[node.parent].distance_to_soma()
+        parent_diam = 0 if node.parent is None else tree[node.parent].diameter
+
+        x = x0 + tree[node.parent].distance_to_soma() - 0.5*parent_diam*hv_ratio
 
         # get parent y
         y = parent_y.get(node.parent, 0.25*vspace)
@@ -432,6 +436,9 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
         parent_x[int(node)] = x + node.dist_to_parent
         children_y[node.parent].append(y)
 
+        if node.dist_to_parent < 0:
+            print(node, x, y, node.dist_to_parent, node.children)
+
         axis.add_artist(
             Rectangle((x, y), node.dist_to_parent, node.diameter,
                       fill=True, facecolor=facecolor,
@@ -440,8 +447,6 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
     # last iteration for vertical connections
     queue = deque(tree.root.children)
 
-    hv_ratio = tot_length/tot_height
-
     while queue:
         node = tree[queue.popleft()]
         queue.extend(node.children)
@@ -449,7 +454,7 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
         d = node.diameter*hv_ratio
 
         if node.children:
-            x      = parent_x[int(node)] - 0.25*d
+            x      = parent_x[int(node)]
             y1, y2 = children_y[int(node)]
 
             y1, y2 = min(y1, y2), max(y1, y2)
