@@ -153,7 +153,7 @@ def create_neurons(n=1, params=None, axon_params=None, dendrites_params=None,
     neurons : Neuron, Population, or ints
         By default, returns a :class:`~dense.elements.Neuron` object if a
         single neuron is requested, a :class:`~dense.elements.Popuulation` if
-        several neurons are created, or a tuple of the neurons' GIDs if 
+        several neurons are created, or a tuple of the neurons' GIDs if
         `return_ints` is True.
 
     Example
@@ -304,7 +304,7 @@ def create_neurons(n=1, params=None, axon_params=None, dendrites_params=None,
         area = get_area(
             on_area if neurites_on_area is True else neurites_on_area,
             culture)
-            
+
         for param in params:
             param = neuron_param_parser(
                 param, culture, n=1, rnd_pos=rnd_pos, on_area=on_area)
@@ -618,7 +618,7 @@ def generate_model(elongation, steering, direction_selection):
 
     assert direction_selection in dtypes, \
         "Invalid `direction_selection` " + direction_selection + "."
-        
+
     return Model(elongation, steering, direction_selection)
 
 
