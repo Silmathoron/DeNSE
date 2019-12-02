@@ -118,7 +118,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
         "'sticks' or 'mixed'."
 
     if show_density:
-        subsample = 1 
+        subsample = 1
 
     # plot
     fig, ax, ax2 = None, None, None
@@ -270,7 +270,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
             n = int(dmax)
             norm = matplotlib.colors.BoundaryNorm(
                 np.arange(0, dmax+1, 1), cmap.N)
-            
+
         counts, xbins, ybins = np.histogram2d(x, y, bins=(xbins, ybins))
         lims = [xbins[0], xbins[-1], ybins[0], ybins[-1]]
         counts[counts == 0] = np.NaN
@@ -278,7 +278,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
         data = ax2.imshow(counts.T, extent=lims, origin="lower",
                           vmin=0 if dmin is None else dmin, vmax=dmax,
                           cmap=cmap)
-        
+
         if colorbar:
             extend = "neither"
             if dmin is not None and dmax is not None:
@@ -292,7 +292,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
         ax2.set_aspect(aspect)
         ax2.set_xlabel(r"x ($\mu$ m)")
         ax2.set_ylabel(r"y ($\mu$ m)")
-    
+
     if scale is not None:
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
@@ -331,7 +331,8 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
 # Plot dendrogram #
 # --------------- #
 
-def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
+def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
+                    show=True, **kwargs):
     '''
     Plot the dendrogram of a neurite.
 
@@ -343,6 +344,11 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
         Axis on which the dendrogram should be plotted.
     show : bool, optional (default: True)
         Whether the figure should be shown right away.
+    show_node_id : bool, optional (default: False)
+        Display each node number on the branching points.
+    aspect_ratio : float, optional (default: variable)
+        Whether to use a fixed aspect ratio. Automatically set to 1 if
+        `show_node_id` is True.
     **kwargs : arguments for :class:`matplotlib.patches.Rectangle`
         For instance `facecolor` or `edgecolor`.
     '''
@@ -355,8 +361,11 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
 
     fig = axis.get_figure()
 
-    facecolor = kwargs.get("facecolor", "k")
-    edgecolor = kwargs.get("edgecolor", "none")
+    if "facecolor" not in kwargs:
+        kwargs["facecolor"] = "k"
+
+    if "edgecolor" not in kwargs:
+        kwargs["edgecolor"] = "none"
 
     # get the number of tips
     num_tips = len(tree.tips)
@@ -379,6 +388,10 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
     up_children   = {}
     down_children = {}
 
+    diams = []
+
+    root_dchildren = {tree.root.children[0].children[1]}
+
     while queue:
         node = tree[queue.popleft()]
         queue.extend(node.children)
@@ -387,15 +400,30 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
             up_children[node]   = {node.children[0]}
             down_children[node] = {node.children[1]}
 
-        if node in up_children.get(node.parent, []):
+        inode = int(node)
+
+        print(inode, node.parent, node.children)
+
+        if inode in up_children.get(node.parent, []):
             for val in up_children.values():
                 if node.parent in val:
                     val.add(int(node))
 
-        if node in down_children.get(node.parent, []):
+        if inode in down_children.get(node.parent, []):
             for val in down_children.values():
                 if node.parent in val:
                     val.add(int(node))
+
+        diams.append(node.diameter)
+
+    print("up", up_children)
+    print("down", down_children)
+    print("tips", len(tree.tips), tree.tips)
+    root = int(tree.root.children[0])
+    print("root", len(up_children[root]), len(down_children[root]))
+    print("root", root_dchildren)
+
+    size = np.max(diams)
 
     # now we can plot the dendrogram
     x0 = 0.01*max_dts
@@ -408,13 +436,16 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
 
     queue = deque(tree.root.children)
 
+    vbar_diam_ratio = 0.125
+
     while queue:
         node = tree[queue.popleft()]
         queue.extend(node.children)
 
         parent_diam = 0 if node.parent is None else tree[node.parent].diameter
 
-        x = x0 + tree[node.parent].distance_to_soma() - 0.5*parent_diam*hv_ratio
+        x = x0 + tree[node.parent].distance_to_soma() \
+            - vbar_diam_ratio*parent_diam*hv_ratio
 
         # get parent y
         y = parent_y.get(node.parent, 0.25*vspace)
@@ -436,13 +467,9 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
         parent_x[int(node)] = x + node.dist_to_parent
         children_y[node.parent].append(y)
 
-        if node.dist_to_parent < 0:
-            print(node, x, y, node.dist_to_parent, node.children)
-
         axis.add_artist(
             Rectangle((x, y), node.dist_to_parent, node.diameter,
-                      fill=True, facecolor=facecolor,
-                      edgecolor=edgecolor))
+                      fill=True, **kwargs))
 
     # last iteration for vertical connections
     queue = deque(tree.root.children)
@@ -451,20 +478,45 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
         node = tree[queue.popleft()]
         queue.extend(node.children)
 
-        d = node.diameter*hv_ratio
-
         if node.children:
             x      = parent_x[int(node)]
+            y      = parent_y[int(node)] + 0.5*node.diameter
             y1, y2 = children_y[int(node)]
 
             y1, y2 = min(y1, y2), max(y1, y2)
 
+            dx = 0.5*vbar_diam_ratio*node.diameter*hv_ratio
+
+            if show_node_id:
+                circle = plt.Circle(
+                    (x + dx, y),
+                    size, color=kwargs["facecolor"])
+
+                artist = axis.add_artist(circle)
+                artist.set_zorder(5)
+
+                str_id  = str(int(node))
+                xoffset = len(str_id)*0.3*size
+                text    = TextPath((x + dx - xoffset, y - 0.3*size), str_id,
+                                   size=size)
+
+                textpatch = PathPatch(text, edgecolor="w", facecolor="w",
+                                      linewidth=0.01*size)
+
+                axis.add_artist(textpatch)
+                textpatch.set_zorder(6)
+
             axis.add_artist(
-                Rectangle((x, y1), 0.5*d, (y2 - y1) + 0.5*node.diameter,
-                          fill=True, facecolor=facecolor, edgecolor=edgecolor))
+                Rectangle((x, y1), vbar_diam_ratio*node.diameter*hv_ratio,
+                          (y2 - y1) + 0.5*node.diameter, fill=True, **kwargs))
 
     axis.set_xlim(0, tot_length)
     axis.set_ylim(0, tot_height)
+
+    if show_node_id:
+        axis.set_aspect(1.)
+    elif aspect_ratio is not None:
+        axis.set_aspect(aspect_ratio)
 
     plt.axis('off')
     fig.patch.set_alpha(0.)

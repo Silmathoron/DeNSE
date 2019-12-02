@@ -48,7 +48,7 @@ neuron_params = {
     "axon_diameter": 3.*um,
     "position": (0., 0.)*um,
     "max_arbor_length": 20000.*um,
-    "diameter_eta_exp": 3.,
+    "diameter_eta_exp": 20.,
     "diameter_ratio_avg": 1.,
 }
 
@@ -66,8 +66,8 @@ dendrite_params = {
     "use_van_pelt": True,
 
     "persistence_length": 100.0 * um,
-    "taper_rate": 1./80.,
-    "diameter_fraction_lb": 0.5,
+    "taper_rate": 1./100.,
+    "diameter_fraction_lb": 0.7,
 
     # SFR parameters
     "somatropic_scale": 100.*um,
