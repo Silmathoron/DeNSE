@@ -383,45 +383,72 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
     tot_length = 1.02*max_dts
 
     # we need to find the number of up and down children for each node
-    queue = deque(tree.root.children)
-
     up_children   = {}
     down_children = {}
 
     diams = []
 
-    root_dchildren = {tree.root.children[0].children[1]}
+    root = tree.root
+    tips = set([int(t) for t in tree.tips])
+
+    # get root as first node with 2 children
+    while len(root.children) == 1:
+        root.children[0].dist_to_parent += root.dist_to_parent
+        root = root.children[0]
+
+    queue = deque([root])
 
     while queue:
         node = tree[queue.popleft()]
         queue.extend(node.children)
 
-        if node.children:
-            up_children[node]   = {node.children[0]}
-            down_children[node] = {node.children[1]}
-
         inode = int(node)
 
-        print(inode, node.parent, node.children)
+        if len(node.children) == 1:
+            # gc died there, transfer children and update them
+            parent = tree[node.parent]
 
-        if inode in up_children.get(node.parent, []):
+            for i, child in enumerate(parent.children):
+                if child == node:
+                    parent.children[i] = node.children[0]
+
+            child = parent.children[0]
+            child.dist_to_parent += node.dist_to_parent
+            child.parent = node.parent
+
+            # check up/down_children and replace node by child
+            for key, val in up_children.items():
+                if inode in val:
+                    up_children[key] = set([n for n in val if n is not inode])
+                    up_children[key].add(int(child))
+
+            for key, val in down_children.items():
+                if inode in val:
+                    down_children[key] = set([n for n in val if n is not inode])
+                    down_children[key].add(int(child))
+        else:
+            if len(node.children) == 2:
+                up_children[inode]   = {int(node.children[0])}
+                down_children[inode] = {int(node.children[1])}
+
             for val in up_children.values():
                 if node.parent in val:
-                    val.add(int(node))
+                    val.add(inode)
 
-        if inode in down_children.get(node.parent, []):
             for val in down_children.values():
                 if node.parent in val:
-                    val.add(int(node))
+                    val.add(inode)
 
-        diams.append(node.diameter)
+            diams.append(node.diameter)
 
-    print("up", up_children)
-    print("down", down_children)
-    print("tips", len(tree.tips), tree.tips)
-    root = int(tree.root.children[0])
-    print("root", len(up_children[root]), len(down_children[root]))
-    print("root", root_dchildren)
+    # keep only tips in up/down_children
+    up_tips, down_tips = {}, {}
+
+    for key, val in up_children.items():
+        up_tips[key] = val.intersection(tips)
+
+    for key, val in down_children.items():
+        down_tips[key] = val.intersection(tips)
 
     size = np.max(diams)
 
@@ -434,13 +461,15 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
     parent_y   = {}
     children_y = {int(tree.root): []}
 
-    queue = deque(tree.root.children)
+    queue = deque([root])
 
-    vbar_diam_ratio = 0.125
+    vbar_diam_ratio = 0.25
 
     while queue:
         node = tree[queue.popleft()]
         queue.extend(node.children)
+
+        inode = int(node)
 
         parent_diam = 0 if node.parent is None else tree[node.parent].diameter
 
@@ -448,23 +477,23 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
             - vbar_diam_ratio*parent_diam*hv_ratio
 
         # get parent y
-        y = parent_y.get(node.parent, 0.25*vspace)
+        y = parent_y.get(node.parent, 0.)
 
         num_up, num_down = 0.5, 0.5
 
         if node.children:
-            num_up   = len(up_children[int(node)])
-            num_down = len(down_children[int(node)])
+            num_up   = len(up_tips[inode])
+            num_down = len(down_tips[inode])
 
-            children_y[int(node)] = []
+            children_y[inode] = []
 
-        if node in up_children.get(node.parent, [node]):
+        if inode in up_children.get(node.parent, [inode]):
             y += num_down*vspace - 0.5*node.diameter
         else:
             y -= num_up*vspace + 0.5*node.diameter
 
-        parent_y[int(node)] = y
-        parent_x[int(node)] = x + node.dist_to_parent
+        parent_y[inode] = y
+        parent_x[inode] = x + node.dist_to_parent
         children_y[node.parent].append(y)
 
         axis.add_artist(
@@ -472,16 +501,21 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
                       fill=True, **kwargs))
 
     # last iteration for vertical connections
-    queue = deque(tree.root.children)
+    queue = deque([root])
 
     while queue:
         node = tree[queue.popleft()]
         queue.extend(node.children)
 
+        inode = int(node)
+
         if node.children:
-            x      = parent_x[int(node)]
-            y      = parent_y[int(node)] + 0.5*node.diameter
-            y1, y2 = children_y[int(node)]
+            x      = parent_x[inode]
+            y      = parent_y[inode] + 0.5*node.diameter
+            try:
+                y1, y2 = children_y[inode]
+            except Exception as e:
+                print("signle child", node, node.children)
 
             y1, y2 = min(y1, y2), max(y1, y2)
 
@@ -495,7 +529,7 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
                 artist = axis.add_artist(circle)
                 artist.set_zorder(5)
 
-                str_id  = str(int(node))
+                str_id  = str(inode)
                 xoffset = len(str_id)*0.3*size
                 text    = TextPath((x + dx - xoffset, y - 0.3*size), str_id,
                                    size=size)
@@ -511,7 +545,8 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
                           (y2 - y1) + 0.5*node.diameter, fill=True, **kwargs))
 
     axis.set_xlim(0, tot_length)
-    axis.set_ylim(0, tot_height)
+    # ~ axis.set_ylim(0, tot_height)
+    axis.set_ylim(np.min(list(parent_y.values())) - 1.25*vspace, np.max(list(parent_y.values())) + 1.25*vspace)
 
     if show_node_id:
         axis.set_aspect(1.)
