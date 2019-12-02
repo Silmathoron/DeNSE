@@ -106,7 +106,7 @@ double Branch::module_from_points(const BPoint &p)
 }
 
 
-void Branch::set_first_point(const BPoint &p, double length)
+void Branch::set_first_point(const BPoint &p, double dist_to_soma)
 {
     initial_point_ = p;
 
@@ -114,13 +114,13 @@ void Branch::set_first_point(const BPoint &p, double length)
     {
         points_[0].push_back(p.x());
         points_[1].push_back(p.y());
-        points_[2].push_back(length);
+        points_[2].push_back(dist_to_soma);
     }
     else
     {
         points_[0][0] = p.x();
         points_[1][0] = p.y();
-        points_[2][0] = length;
+        points_[2][0] = dist_to_soma;
     }
 }
 

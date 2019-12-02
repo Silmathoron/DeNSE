@@ -90,16 +90,17 @@ class TopologicalNode : public BaseNode
   public:
     TopologicalNode();
     TopologicalNode(const TopologicalNode &tnode);
-    TopologicalNode(BaseWeakNodePtr parent, double distanceToParent,
-                    const BPoint &position, double diameter);
+    TopologicalNode(BaseWeakNodePtr parent, double distance_to_parent,
+                    const BPoint &position, double diameter,
+                    NeuritePtr neurite);
 
     /**
      * @brief Update the centrifugal order
      */
     void topological_advance();
     void set_first_point(const BPoint &p, double length);
-    virtual void set_diameter(double diameter);
-    void set_position(const BPoint &) override;
+    void set_diameter(double diameter);
+    virtual void set_position(const BPoint &) override;
     void update_branch_and_parent(BaseNodePtr parent, BranchPtr b);
 
     // geometry getter functions
@@ -144,8 +145,8 @@ class Node : public TopologicalNode
     std::vector<TNodePtr> children_;
 
   public:
-    Node(BaseWeakNodePtr parent, double distanceToParent, const BPoint &pos,
-         double diameter);
+    Node(BaseWeakNodePtr parent, double distanceToParent,
+         const BPoint &pos, double diameter, NeuritePtr neurite);
 
     TNodePtr get_child(int) const;
 

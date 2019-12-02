@@ -185,15 +185,18 @@ GrowthCone::~GrowthCone()
  * This is called to update a GrowthCone after it has been cloned from
  * when branching occurs.
  */
-void GrowthCone::update_topology(BaseWeakNodePtr parent, NeuritePtr own_neurite,
-                                 float distance_to_parent,
+void GrowthCone::update_topology(BaseWeakNodePtr parent,
+                                 NeuritePtr own_neurite,
+                                 double distance_to_parent,
                                  const BPoint &position, double angle)
 {
     parent_ = parent;
     centrifugal_order_ = parent.lock()->get_centrifugal_order() + 1;
 
     position_ = position;
-    dist_to_soma_ = parent.lock()->get_distance_to_soma() + distance_to_parent;
+
+    dist_to_soma_   = parent.lock()->get_distance_to_soma()
+                      + distance_to_parent;
     dist_to_parent_ = distance_to_parent;
 
     has_child_ = false;
@@ -611,7 +614,7 @@ void GrowthCone::retraction(double distance, stype cone_n, int omp_id)
         move_.angle = atan2(y1 - y0, x1 - x0);
     }
 
-    position_ = branch_->get_last_xy();
+    set_position(branch_->get_last_xy());
 
     // prune growth cone if necessary
     if (branch_->size() == 1)
@@ -851,7 +854,7 @@ void GrowthCone::make_move(const std::vector<double> &directions_weights,
             }
 
             // store new position
-            position_ = p;
+            set_position(p);
 
             // check if we switched to a new area
             std::string new_area =
@@ -864,6 +867,18 @@ void GrowthCone::make_move(const std::vector<double> &directions_weights,
             }
         }
     }
+}
+
+
+/**
+ * Set GrowthCone position and update distances to parent and soma
+ */
+void GrowthCone::set_position(const BPoint &pos)
+{
+    position_ = pos;
+
+    dist_to_parent_ = branch_->get_length();
+    dist_to_soma_   = branch_->final_distance_to_soma();
 }
 
 

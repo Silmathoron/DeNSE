@@ -637,8 +637,10 @@ bool Branching::usplit_new_branch(TNodePtr &branching_node, NodePtr &new_node,
         double new_angle, old_angle;
         double old_diameter = next_usplit_cone->get_diameter();
         double new_diameter = old_diameter;
+
         neurite_->gc_split_angles_diameter(rnd_engine, new_angle, old_angle,
                                            new_diameter, old_diameter);
+
         bool success =
             neurite_->growth_cone_split(next_usplit_cone, new_length,
                                         new_angle, old_angle, new_diameter,
@@ -646,6 +648,7 @@ bool Branching::usplit_new_branch(TNodePtr &branching_node, NodePtr &new_node,
 
         next_usplit_event_ = invalid_ev;
         compute_usplit_event(rnd_engine);
+
         return success;
     }
 
@@ -782,8 +785,10 @@ bool Branching::vanpelt_new_branch(TNodePtr &branching_node, NodePtr &new_node,
         double new_angle, old_angle;
         double old_diameter = nex_vanpelt_cone->get_diameter();
         double new_diameter = old_diameter;
+
         neurite_->gc_split_angles_diameter(rnd_engine, new_angle, old_angle,
                                            new_diameter, old_diameter);
+   
         bool success =
             neurite_->growth_cone_split(nex_vanpelt_cone, new_length,
                                         new_angle, old_angle, new_diameter,

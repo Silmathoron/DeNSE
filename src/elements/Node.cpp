@@ -104,17 +104,21 @@ TopologicalNode::TopologicalNode(const TopologicalNode &tnode)
 {}
 
 
-TopologicalNode::TopologicalNode(BaseWeakNodePtr parent, double distanceToParent,
-                                 const BPoint &position, double diameter)
-    : BaseNode(position, distanceToParent,
-               distanceToParent + parent.lock()->get_distance_to_soma())
+TopologicalNode::TopologicalNode(BaseWeakNodePtr parent,
+                                 double distance_to_parent,
+                                 const BPoint &position,
+                                 double diameter,
+                                 NeuritePtr neurite)
+    : BaseNode(position, distance_to_parent,
+               distance_to_parent +
+               parent.lock()->get_distance_to_soma())
     , parent_(parent)
     , centrifugal_order_(parent.lock()->get_centrifugal_order() + 1)
     , has_child_(false)
     , node_id_(0)
     , dead_(false)
     , branch_(std::make_shared<Branch>())
-    , own_neurite_(nullptr)
+    , own_neurite_(neurite)
     , diameter_(diameter)
 {}
 
@@ -127,21 +131,24 @@ void TopologicalNode::topological_advance()
 
 /**
  * @brief Overwrite the first element of the owned branch
- * This function update the distanceToSoma of the TNode and
- * call the omonoom function in the Branch
+ * This function update the dist_to_parent of the TNode and
+ * call the homonym function in the Branch
  * @param xy
- * @param distanceToSoma
+ * @param dist_to_soma
  */
-void TopologicalNode::set_first_point(const BPoint &p, double length)
+void TopologicalNode::set_first_point(const BPoint &p,
+                                      double dist_to_soma)
 {
-    branch_->set_first_point(p, length);
+    dist_to_parent_ = dist_to_soma_ - dist_to_soma;
+
+    branch_->set_first_point(p, dist_to_soma);
 }
 
 
 void TopologicalNode::set_position(const BPoint &pos)
 {
-    LogicError("Cannot set only position for a TopologicalNode", __FUNCTION__,
-               __FILE__, __LINE__);
+    LogicError("Cannot set only position for a TopologicalNode",
+               __FUNCTION__, __FILE__, __LINE__);
 }
 
 
@@ -196,15 +203,14 @@ bool TopologicalNode::support_AW() const { return false; }
 This parameters
 Growth cone constructor:
 \param parent_ is the parent node in the dendritic tree.
-\param distanceToParent is the distance in micrometers from the parent node.
-\param OwnNeurite is the neurite which the GC belongs to
+\param distance_to_parent is the distance in micrometers from the parent node.
 \param position is the real space point of the node
 \param BranchParentID is the relative name respect to the parent,
 necessary for build the Id
 */
-Node::Node(BaseWeakNodePtr parent, double distance, const BPoint &pos,
-           double diameter)
-  : TopologicalNode(parent, distance, pos, diameter)
+Node::Node(BaseWeakNodePtr parent, double distance_to_parent,
+           const BPoint &pos, double diameter, NeuritePtr neurite)
+  : TopologicalNode(parent, distance_to_parent, pos, diameter, neurite)
 {
     has_child_ = true;
 }

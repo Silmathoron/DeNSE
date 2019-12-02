@@ -126,8 +126,8 @@ class GrowthCone : public TopologicalNode,
                         double angle) = 0;
 
     void update_topology(BaseWeakNodePtr parent, NeuritePtr ownNeurite,
-                         float distanceToParent, const BPoint &position,
-                         double angle);
+                         double distanc_to_parent,
+                         const BPoint &position, double angle);
 
     // growth
     void grow(mtPtr rnd_engine, stype cone_n, double substep);
@@ -163,6 +163,8 @@ class GrowthCone : public TopologicalNode,
     void set_angle(double angle);
     virtual void prepare_for_split() = 0;
     virtual void after_split() = 0;
+
+    virtual void set_position(const BPoint &pos) override final;
 
     // get functions
     double get_module() const;
