@@ -774,12 +774,19 @@ class Tree(dict):
     def _cleanup(self):
         for val in self.values():
             val.children = []
+
         for key, val in self.items():
-            if val.parent is None or val.parent == val:
+            if key != int(val):
+                print("in cleanup", key, val)
+            if val.parent is None or val.parent == int(val):
                 self._root = val
                 val.parent = None
+                self[int(val)] = val
             else:
+                if int(val.parent) not in self:
+                    print("not in self", key, val, val.parent)
                 self[int(val.parent)].children.append(val)
+
         self.update_tips()
 
 
