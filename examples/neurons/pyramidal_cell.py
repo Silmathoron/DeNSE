@@ -169,7 +169,7 @@ dend_params = {
 # updates neurites parameters
 ds.set_object_properties(n, dendrites_params=dend_params, axon_params=lb_axon)
 
-ds.simulate(7*day)
+ds.simulate(3.1*day)
 
 ds.plot.plot_dendrogram(n.axon, show=False)
 

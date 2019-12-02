@@ -288,19 +288,12 @@ void Branching::update_splitting_cones(TNodePtr branching_cone,
     branching_cone->set_first_point(tmp, d_som);
     second_cone->set_first_point(tmp, d_som);
 
-#ifndef NDEBUG
-    printf("retracted\n");
-    std::cout << bg::wkt(*(new_node->get_branch()->get_last_segment().get())) << std::endl;
-    std::cout << bg::wkt(pos2) << "\n" << bg::wkt(lp1) << "\n" << bg::wkt(lp2) << "\n" << bg::wkt(pos) << std::endl;
-    // std::cout << bg::wkt(*(second_cone->get_branch()->get_last_segment())) << std::endl;
-#endif
-
     // update the second cone and its branch if possible
     if (kernel().space_manager.env_contains(pos2))
     {
         try
         {
-            second_cone->geometry_.position = pos2;
+            second_cone->position_ = pos2;
 
             double module = bg::distance(tmp, pos2);
 
@@ -325,7 +318,7 @@ void Branching::update_splitting_cones(TNodePtr branching_cone,
     {
         try
         {
-            old_cone->geometry_.position = pos1;
+            old_cone->position_ = pos1;
 
             double module = bg::distance(tmp, pos1);
             
@@ -344,14 +337,6 @@ void Branching::update_splitting_cones(TNodePtr branching_cone,
                 "Passed from `Neurite::growth_cone_split`."));
         }
     }
-
-#ifndef NDEBUG
-    printf("after branching corrections\n");
-    std::cout << bg::wkt(*(branching_cone->get_branch()->get_last_segment().get())) << std::endl;
-    std::cout << bg::wkt(old_cone->get_position()) << std::endl;
-    std::cout << bg::wkt(*(second_cone->get_branch()->get_last_segment().get())) << std::endl;
-    std::cout << bg::wkt(second_cone->get_position()) << std::endl;
-#endif
 }
 
 
@@ -405,6 +390,7 @@ bool Branching::uniform_new_branch(TNodePtr &branching_node, NodePtr &new_node,
 #endif
     branching_node = nullptr;
     new_node       = nullptr;
+    GCPtr gc       = nullptr;
 
     if (not neurite_->growth_cones_.empty())
     {
@@ -426,6 +412,7 @@ bool Branching::uniform_new_branch(TNodePtr &branching_node, NodePtr &new_node,
                 {
                     max            = key;
                     branching_cone = cone.second;
+                    gc             = cone.second;
                 }
             }
         }
@@ -460,6 +447,9 @@ bool Branching::uniform_new_branch(TNodePtr &branching_node, NodePtr &new_node,
             success = neurite_->lateral_branching(
                 branching_node, branching_point, new_node, rnd_engine);
             next_uniform_event_ = invalid_ev;
+
+            // if the branching node was a GrowthCone, change the
+            // TopologicalNode
         }
 
         compute_uniform_event(rnd_engine);
@@ -647,8 +637,10 @@ bool Branching::usplit_new_branch(TNodePtr &branching_node, NodePtr &new_node,
         double new_angle, old_angle;
         double old_diameter = next_usplit_cone->get_diameter();
         double new_diameter = old_diameter;
+
         neurite_->gc_split_angles_diameter(rnd_engine, new_angle, old_angle,
                                            new_diameter, old_diameter);
+
         bool success =
             neurite_->growth_cone_split(next_usplit_cone, new_length,
                                         new_angle, old_angle, new_diameter,
@@ -656,6 +648,7 @@ bool Branching::usplit_new_branch(TNodePtr &branching_node, NodePtr &new_node,
 
         next_usplit_event_ = invalid_ev;
         compute_usplit_event(rnd_engine);
+
         return success;
     }
 
@@ -792,8 +785,10 @@ bool Branching::vanpelt_new_branch(TNodePtr &branching_node, NodePtr &new_node,
         double new_angle, old_angle;
         double old_diameter = nex_vanpelt_cone->get_diameter();
         double new_diameter = old_diameter;
+
         neurite_->gc_split_angles_diameter(rnd_engine, new_angle, old_angle,
                                            new_diameter, old_diameter);
+   
         bool success =
             neurite_->growth_cone_split(nex_vanpelt_cone, new_length,
                                         new_angle, old_angle, new_diameter,
@@ -801,9 +796,7 @@ bool Branching::vanpelt_new_branch(TNodePtr &branching_node, NodePtr &new_node,
 
         next_vanpelt_event_ = invalid_ev;
         compute_vanpelt_event(rnd_engine);
-#ifndef NDEBUG
-        printf("VP branching on %lu, %s, %lu at %lu\n", neurite_->get_parent_neuron().lock()->get_gid(), neurite_->get_name().c_str(), branching_node->get_node_id(), branching_point);
-#endif
+
         return success;
     }
 
