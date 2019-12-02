@@ -21,6 +21,8 @@
 
 """ Plot recording """
 
+from itertools import cycle
+
 import matplotlib.gridspec as gridspec
 from matplotlib.cm import get_cmap
 

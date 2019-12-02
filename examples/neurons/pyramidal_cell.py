@@ -171,14 +171,6 @@ ds.set_object_properties(n, dendrites_params=dend_params, axon_params=lb_axon)
 
 ds.simulate(7*day)
 
-t = n.axon.get_tree()
-
-print(t.root.children)
-print(t.root.children[0].children)
-
-print(t.root.dist_to_parent)
-print(t.root.children[0].dist_to_parent)
-
 ds.plot.plot_dendrogram(n.axon, show=False)
 
 ds.plot.plot_neurons(mode="mixed", show=True)
@@ -186,19 +178,21 @@ ds.plot.plot_neurons(mode="mixed", show=True)
 # Now a third step in development
 # no branching of axons, growth cone splitting of neurites
 
-# ~ vp_axon = {
-    # ~ "use_flpl_branching": False,
-# ~ }
+vp_axon = {
+    "use_flpl_branching": False,
+}
 
-# ~ dend_params = {
-    # ~ "use_van_pelt": True,
-    # ~ "use_uniform_branching": False,
-    # ~ "B": 5.*cpm,
-    # ~ "T": 17*day,
-    # ~ "gc_split_angle_mean": 25.*deg,
-# ~ }
+dend_params = {
+    "use_van_pelt": True,
+    "use_uniform_branching": False,
+    "B": 5.*cpm,
+    "T": 17*day,
+    "gc_split_angle_mean": 25.*deg,
+}
 
-# ~ ds.set_object_properties(n, dendrites_params=dend_params, axon_params=vp_axon)
-# ~ ds.simulate(20*day)
+ds.set_object_properties(n, dendrites_params=dend_params, axon_params=vp_axon)
+ds.simulate(20*day)
 
-# ~ ds.plot.plot_neurons(scale_text=False)
+ds.plot.plot_dendrogram(n.axon, show=False)
+
+ds.plot.plot_neurons(scale_text=False)

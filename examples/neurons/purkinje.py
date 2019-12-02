@@ -48,7 +48,7 @@ neuron_params = {
     "axon_diameter": 3.*um,
     "position": (0., 0.)*um,
     "max_arbor_length": 20000.*um,
-    "diameter_eta_exp":1.,
+    "diameter_eta_exp": 3.,
     "diameter_ratio_avg": 1.,
 }
 
