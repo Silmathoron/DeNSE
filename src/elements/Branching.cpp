@@ -533,6 +533,10 @@ bool Branching::uniform_new_branch(TNodePtr &branching_node, NodePtr &new_node,
         {
             success = false;
         }
+        else
+        {
+            success = false;
+        }
 
         compute_uniform_event(rnd_engine);
 

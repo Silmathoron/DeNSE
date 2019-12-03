@@ -388,7 +388,7 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
     up_children   = {}
     down_children = {}
 
-    diams   = []
+    diams = []
 
     root = tree.root
     tips = set(tree.tips)

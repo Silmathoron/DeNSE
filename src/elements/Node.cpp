@@ -129,6 +129,9 @@ void TopologicalNode::topological_advance()
 }
 
 
+void TopologicalNode::topological_advance() { topology_.centrifugal_order++; }
+
+
 /**
  * @brief Overwrite the first element of the owned branch
  * This function update the dist_to_parent of the TNode and

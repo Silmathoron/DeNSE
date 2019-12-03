@@ -306,6 +306,7 @@ void SpaceManager::add_object(const BPoint &start, const BPoint &stop,
 
             // check whether this did not create a self-crossing
             unsigned int count = 0;
+            bool checked_order = false;
 
             while (not bg::is_valid(*(poly.get()), failure))
             {
@@ -397,7 +398,8 @@ void SpaceManager::add_object(const BPoint &start, const BPoint &stop,
                         }
                     }
                 }
-                else if (failure == bg::failure_wrong_orientation)
+
+                if (failure == bg::failure_wrong_orientation)
                 {
                     bg::correct(*(poly.get()));
                 }

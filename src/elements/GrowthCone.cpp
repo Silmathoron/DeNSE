@@ -569,6 +569,15 @@ void GrowthCone::retraction(double distance, stype cone_n, int omp_id)
             //~ std::cout << "p0 " << bg::wkt(p0) << std::endl;
             //~ }
 
+            //~ std::cout << "p1 " << bg::wkt(p1) << std::endl;
+            //~ std::cout << "p2 " << bg::wkt(p2) << std::endl;
+
+            //~ if (biology_.branch->size() > 2)
+            //~ {
+            //~ BPoint p0 = biology_.branch->xy_at(biology_.branch->size() - 3);
+            //~ std::cout << "p0 " << bg::wkt(p0) << std::endl;
+            //~ }
+
             double new_x =
                 (p2.x() * remaining + p1.x() * (distance_done - remaining)) /
                 distance_done;
