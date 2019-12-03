@@ -332,7 +332,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
 # --------------- #
 
 def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
-                    show=True, **kwargs):
+                    ignore_diameter=False, show=True, **kwargs):
     '''
     Plot the dendrogram of a neurite.
 
@@ -349,6 +349,8 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
     aspect_ratio : float, optional (default: variable)
         Whether to use a fixed aspect ratio. Automatically set to 1 if
         `show_node_id` is True.
+    ignore_diameter : bool, optional (default: False)
+        Plot all the branches with the same width.
     **kwargs : arguments for :class:`matplotlib.patches.Rectangle`
         For instance `facecolor` or `edgecolor`.
     '''
@@ -391,16 +393,28 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
     root = tree.root
     tips = set(tree.tips)
 
+    # diameter is ignored, set all values to default_diam
+    default_diam = 0.2*vspace
+
+    if ignore_diameter:
+        tree.root.diameter = default_diam
+
     # get root as first node with 2 children
     while len(root.children) == 1:
         root.children[0].dist_to_parent += root.dist_to_parent
         root = root.children[0]
+
+        if ignore_diameter:
+            root.diameter = default_diam
 
     queue = deque([root])
 
     while queue:
         node = queue.popleft()
         queue.extend(node.children)
+
+        if ignore_diameter:
+            node.diameter = default_diam
 
         if len(node.children) == 1:
             # gc died there, transfer children and update them
@@ -454,20 +468,30 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
     for key, val in down_children.items():
         down_tips[key] = val.intersection(tips)
 
-    size = np.max(diams)
+    # get max diameter for node plotting
+    max_d = np.max(diams)
 
-    # now we can plot the dendrogram
+    # aspect ratios
+    vbar_diam_ratio = 0.5
+    hv_ratio        = tot_length/tot_height
+
+    if show_node_id:
+        axis.set_aspect(1.)
+        hv_ratio = 1.
+        vbar_diam_ratio = 1.
+    elif aspect_ratio is not None:
+        axis.set_aspect(aspect_ratio)
+        hv_ratio = aspect_ratio
+        vbar_diam_ratio = 0.5 / aspect_ratio
+
+    # making horizontal branches
     x0 = 0.01*max_dts
-
-    hv_ratio = tot_length/tot_height
 
     parent_x   = {}
     parent_y   = {}
     children_y = {tree.root: []}
 
     queue = deque([root])
-
-    vbar_diam_ratio = 0.25
 
     while queue:
         node = queue.popleft()
@@ -522,18 +546,18 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
             if show_node_id:
                 circle = plt.Circle(
                     (x + dx, y),
-                    size, color=kwargs["facecolor"])
+                    max_d, color=kwargs["facecolor"])
 
                 artist = axis.add_artist(circle)
                 artist.set_zorder(5)
 
                 str_id  = str(node)
-                xoffset = len(str_id)*0.3*size
-                text    = TextPath((x + dx - xoffset, y - 0.3*size), str_id,
-                                   size=size)
+                xoffset = len(str_id)*0.3*max_d
+                text    = TextPath((x + dx - xoffset, y - 0.3*max_d), str_id,
+                                   size=max_d)
 
                 textpatch = PathPatch(text, edgecolor="w", facecolor="w",
-                                      linewidth=0.01*size)
+                                      linewidth=0.01*max_d)
 
                 axis.add_artist(textpatch)
                 textpatch.set_zorder(6)
@@ -545,11 +569,6 @@ def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
     axis.set_xlim(0, tot_length)
     axis.set_ylim(np.min(list(parent_y.values())) - 0.75*vspace,
                   np.max(list(parent_y.values())) + 0.75*vspace)
-
-    if show_node_id:
-        axis.set_aspect(1.)
-    elif aspect_ratio is not None:
-        axis.set_aspect(aspect_ratio)
 
     plt.axis('off')
     fig.patch.set_alpha(0.)

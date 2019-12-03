@@ -59,7 +59,7 @@ axon_params = {
     "growth_cone_model": gc_model,
 
     # Steering parameters
-    "sensing_angle": 90.*deg,
+    "sensing_angle": 80.*deg,
     # "self_avoidance_factor": 0.,
     # "self_avoidance_scale": 20.*um,
     "somatropic_scale": 70.*um,
@@ -85,7 +85,7 @@ axon_params = {
 dend_params = {
     "growth_cone_model": gc_model,
     # Steering parameters
-    "sensing_angle": 90.*deg,
+    "sensing_angle": 80.*deg,
 
     "somatropic_mode": "window",
     # "somatropic_factor": 100.,
