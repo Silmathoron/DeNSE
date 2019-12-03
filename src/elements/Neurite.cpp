@@ -938,13 +938,6 @@ bool Neurite::growth_cone_split(GCPtr branching_cone, double new_length,
 {
     if (not branching_cone->is_dead() and active_)
     {
-
-#ifndef NDEBUG
-        std::cout << "\n\n\nSPLITTING\n"
-                  << "new_angle " << new_angle << "new length " << new_length
-                  << "\n\n\n";
-#endif
-
         auto direction = branching_cone->move_.angle;
 
         // prepare growth cone variables for split
@@ -1140,9 +1133,19 @@ void Neurite::add_node(NodePtr node)
 
 bool Neurite::walk_tree(NodeProp &np) const
 {
+    static bool reset   = false;
     static auto gcrange = gc_range();
     static auto gc_it   = gcrange.begin();
     static auto n_it    = nodes_.cbegin();
+
+    if (reset)
+    {
+        gcrange = gc_range();
+        gc_it   = gc_range().begin();
+        n_it    = nodes_.cbegin();
+
+        reset = false;
+    }
 
     stype nid, pid;
     double diam, dtp;
@@ -1207,8 +1210,8 @@ bool Neurite::walk_tree(NodeProp &np) const
         return true;
     }
 
-    gc_it = gc_range().begin();
-    n_it  = nodes_.cbegin();
+    // reset iterators
+    reset = true;
 
     return false;
 }

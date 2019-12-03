@@ -63,7 +63,7 @@ axon_params = {
 
     #"filopodia_wall_affinity": 0.05,
     "filopodia_finger_length": 20.*um,
-    "filopodia_min_number": 30,    
+    "filopodia_min_number": 30,
 
     # extension parameters
     "persistence_length": 500.*um,
@@ -132,12 +132,8 @@ rec = ds.create_recorders(n, "num_growth_cones")
 
 ds.simulate(10*day)
 
-print(ds.get_kernel_status('time'))
 
-recording = ds.get_recording(rec, record_format="compact")
-print(recording)
-
-ds.plot.plot_neurons(mode="mixed", show=True)
+# ~ ds.plot.plot_neurons(mode="mixed", show=True)
 
 # second development phase : with lateral branching
 
@@ -171,6 +167,7 @@ ds.set_object_properties(n, dendrites_params=dend_params, axon_params=lb_axon)
 
 ds.simulate(7*day)
 
+ds.plot.plot_dendrogram(n.axon, show=False)
 ds.plot.plot_neurons(mode="mixed", show=True)
 
 # Now a third step in development
@@ -191,6 +188,10 @@ dend_params = {
 ds.set_object_properties(n, dendrites_params=dend_params, axon_params=vp_axon)
 ds.simulate(20*day)
 
+<<<<<<< HEAD
 ds.io.save_to_swc("pyramidal-cell.swc", gid=n)
 
+=======
+ds.plot.plot_dendrogram(n.axon, show_node_id=True, show=False)
+>>>>>>> f69bf80b4fea71906fa4cf92f89bf48f9f4585e9
 ds.plot.plot_neurons(scale_text=False)
