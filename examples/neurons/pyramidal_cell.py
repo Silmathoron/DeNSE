@@ -67,7 +67,7 @@ axon_params = {
 
     #"filopodia_wall_affinity": 0.05,
     "filopodia_finger_length": 20.*um,
-    "filopodia_min_number": 30,    
+    "filopodia_min_number": 30,
 
     # extension parameters
     "persistence_length": 500.*um,
@@ -171,9 +171,8 @@ ds.set_object_properties(n, dendrites_params=dend_params, axon_params=lb_axon)
 
 ds.simulate(7*day)
 
-# ~ ds.plot.plot_dendrogram(n.axon, show=False)
-
-# ~ ds.plot.plot_neurons(mode="mixed", show=True)
+ds.plot.plot_dendrogram(n.axon, show=False)
+ds.plot.plot_neurons(mode="mixed", show=True)
 
 # Now a third step in development
 # no branching of axons, growth cone splitting of neurites
@@ -194,5 +193,4 @@ ds.set_object_properties(n, dendrites_params=dend_params, axon_params=vp_axon)
 ds.simulate(20*day)
 
 ds.plot.plot_dendrogram(n.axon, show_node_id=True, show=False)
-
 ds.plot.plot_neurons(scale_text=False)
