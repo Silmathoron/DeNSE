@@ -59,7 +59,7 @@ axon_params = {
     "growth_cone_model": gc_model,
 
     # Steering parameters
-    "sensing_angle": 90.*deg,
+    "sensing_angle": 80.*deg,
     # "self_avoidance_factor": 0.,
     # "self_avoidance_scale": 20.*um,
     "somatropic_scale": 70.*um,
@@ -67,7 +67,7 @@ axon_params = {
 
     #"filopodia_wall_affinity": 0.05,
     "filopodia_finger_length": 20.*um,
-    "filopodia_min_number": 30,    
+    "filopodia_min_number": 30,
 
     # extension parameters
     "persistence_length": 500.*um,
@@ -85,7 +85,7 @@ axon_params = {
 dend_params = {
     "growth_cone_model": gc_model,
     # Steering parameters
-    "sensing_angle": 90.*deg,
+    "sensing_angle": 80.*deg,
 
     "somatropic_mode": "window",
     # "somatropic_factor": 100.,
@@ -169,10 +169,9 @@ dend_params = {
 # updates neurites parameters
 ds.set_object_properties(n, dendrites_params=dend_params, axon_params=lb_axon)
 
-ds.simulate(3.1*day)
+ds.simulate(7*day)
 
 ds.plot.plot_dendrogram(n.axon, show=False)
-
 ds.plot.plot_neurons(mode="mixed", show=True)
 
 # Now a third step in development

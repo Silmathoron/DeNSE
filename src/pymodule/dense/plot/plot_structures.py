@@ -118,7 +118,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
         "'sticks' or 'mixed'."
 
     if show_density:
-        subsample = 1 
+        subsample = 1
 
     # plot
     fig, ax, ax2 = None, None, None
@@ -270,7 +270,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
             n = int(dmax)
             norm = matplotlib.colors.BoundaryNorm(
                 np.arange(0, dmax+1, 1), cmap.N)
-            
+
         counts, xbins, ybins = np.histogram2d(x, y, bins=(xbins, ybins))
         lims = [xbins[0], xbins[-1], ybins[0], ybins[-1]]
         counts[counts == 0] = np.NaN
@@ -278,7 +278,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
         data = ax2.imshow(counts.T, extent=lims, origin="lower",
                           vmin=0 if dmin is None else dmin, vmax=dmax,
                           cmap=cmap)
-        
+
         if colorbar:
             extend = "neither"
             if dmin is not None and dmax is not None:
@@ -292,7 +292,7 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
         ax2.set_aspect(aspect)
         ax2.set_xlabel(r"x ($\mu$ m)")
         ax2.set_ylabel(r"y ($\mu$ m)")
-    
+
     if scale is not None:
         xmin, xmax = ax.get_xlim()
         ymin, ymax = ax.get_ylim()
@@ -331,7 +331,8 @@ def plot_neurons(gid=None, mode="sticks", show_nodes=False, show_active_gc=True,
 # Plot dendrogram #
 # --------------- #
 
-def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
+def plot_dendrogram(neurite, axis=None, show_node_id=False, aspect_ratio=None,
+                    ignore_diameter=False, show=True, **kwargs):
     '''
     Plot the dendrogram of a neurite.
 
@@ -343,6 +344,13 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
         Axis on which the dendrogram should be plotted.
     show : bool, optional (default: True)
         Whether the figure should be shown right away.
+    show_node_id : bool, optional (default: False)
+        Display each node number on the branching points.
+    aspect_ratio : float, optional (default: variable)
+        Whether to use a fixed aspect ratio. Automatically set to 1 if
+        `show_node_id` is True.
+    ignore_diameter : bool, optional (default: False)
+        Plot all the branches with the same width.
     **kwargs : arguments for :class:`matplotlib.patches.Rectangle`
         For instance `facecolor` or `edgecolor`.
     '''
@@ -355,8 +363,11 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
 
     fig = axis.get_figure()
 
-    facecolor = kwargs.get("facecolor", "k")
-    edgecolor = kwargs.get("edgecolor", "none")
+    if "facecolor" not in kwargs:
+        kwargs["facecolor"] = "k"
+
+    if "edgecolor" not in kwargs:
+        kwargs["edgecolor"] = "none"
 
     # get the number of tips
     num_tips = len(tree.tips)
@@ -374,97 +385,190 @@ def plot_dendrogram(neurite, axis=None, show=True, **kwargs):
     tot_length = 1.02*max_dts
 
     # we need to find the number of up and down children for each node
-    queue = deque(tree.root.children)
-
     up_children   = {}
     down_children = {}
 
+    diams   = []
+
+    root = tree.root
+    tips = set(tree.tips)
+
+    # diameter is ignored, set all values to default_diam
+    default_diam = 0.2*vspace
+
+    if ignore_diameter:
+        tree.root.diameter = default_diam
+
+    # get root as first node with 2 children
+    while len(root.children) == 1:
+        root.children[0].dist_to_parent += root.dist_to_parent
+        root = root.children[0]
+
+        if ignore_diameter:
+            root.diameter = default_diam
+
+    queue = deque([root])
+
     while queue:
-        node = tree[queue.popleft()]
+        node = queue.popleft()
         queue.extend(node.children)
 
-        if node.children:
-            up_children[node]   = {node.children[0]}
-            down_children[node] = {node.children[1]}
+        if ignore_diameter:
+            node.diameter = default_diam
 
-        if node in up_children.get(node.parent, []):
+        if len(node.children) == 1:
+            # gc died there, transfer children and update them
+            parent = node.parent
+
+            child_pos = 0
+
+            for i, child in enumerate(parent.children):
+                if child == node:
+                    parent.children[i] = node.children[0]
+                    child_pos = i
+                    break
+
+            # use loop to keep child memory and update properties
+            child = parent.children[child_pos]
+            child.dist_to_parent += node.dist_to_parent
+            child.parent = node.parent
+            child.diameter = 0.5*(node.diameter + child.diameter)
+
+            # check up/down_children and replace node by child
+            for key, val in up_children.items():
+                if node in val:
+                    up_children[key] = set([n for n in val if n is not node])
+                    up_children[key].add(child)
+
+            for key, val in down_children.items():
+                if node in val:
+                    down_children[key] = set([n for n in val if n is not node])
+                    down_children[key].add(child)
+        else:
+            if len(node.children) == 2:
+                up_children[node]   = {node.children[0]}
+                down_children[node] = {node.children[1]}
+
             for val in up_children.values():
                 if node.parent in val:
-                    val.add(int(node))
+                    val.add(node)
 
-        if node in down_children.get(node.parent, []):
             for val in down_children.values():
                 if node.parent in val:
-                    val.add(int(node))
+                    val.add(node)
 
-    # now we can plot the dendrogram
+            diams.append(node.diameter)
+
+    # keep only tips in up/down_children
+    up_tips, down_tips = {}, {}
+
+    for key, val in up_children.items():
+        up_tips[key] = val.intersection(tips)
+
+    for key, val in down_children.items():
+        down_tips[key] = val.intersection(tips)
+
+    # get max diameter for node plotting
+    max_d = np.max(diams)
+
+    # aspect ratios
+    vbar_diam_ratio = 0.5
+    hv_ratio        = tot_length/tot_height
+
+    if show_node_id:
+        axis.set_aspect(1.)
+        hv_ratio = 1.
+        vbar_diam_ratio = 1.
+    elif aspect_ratio is not None:
+        axis.set_aspect(aspect_ratio)
+        hv_ratio = aspect_ratio
+        vbar_diam_ratio = 0.5 / aspect_ratio
+
+    # making horizontal branches
     x0 = 0.01*max_dts
-
-    hv_ratio = tot_length/tot_height
 
     parent_x   = {}
     parent_y   = {}
-    children_y = {int(tree.root): []}
+    children_y = {tree.root: []}
 
-    queue = deque(tree.root.children)
+    queue = deque([root])
 
     while queue:
-        node = tree[queue.popleft()]
+        node = queue.popleft()
         queue.extend(node.children)
 
-        parent_diam = 0 if node.parent is None else tree[node.parent].diameter
+        parent_diam = 0 if node.parent is None else node.parent.diameter
 
-        x = x0 + tree[node.parent].distance_to_soma() - 0.5*parent_diam*hv_ratio
+        x = x0 + node.parent.distance_to_soma() \
+            - vbar_diam_ratio*parent_diam*hv_ratio
 
         # get parent y
-        y = parent_y.get(node.parent, 0.25*vspace)
+        y = parent_y.get(node.parent, 0.)
 
         num_up, num_down = 0.5, 0.5
 
         if node.children:
-            num_up   = len(up_children[int(node)])
-            num_down = len(down_children[int(node)])
+            num_up   = len(up_tips[node])
+            num_down = len(down_tips[node])
 
-            children_y[int(node)] = []
+            children_y[node] = []
 
         if node in up_children.get(node.parent, [node]):
             y += num_down*vspace - 0.5*node.diameter
         else:
             y -= num_up*vspace + 0.5*node.diameter
 
-        parent_y[int(node)] = y
-        parent_x[int(node)] = x + node.dist_to_parent
-        children_y[node.parent].append(y)
+        parent_y[node] = y
+        parent_x[node] = x + node.dist_to_parent
 
-        if node.dist_to_parent < 0:
-            print(node, x, y, node.dist_to_parent, node.children)
+        children_y[node.parent].append(y)
 
         axis.add_artist(
             Rectangle((x, y), node.dist_to_parent, node.diameter,
-                      fill=True, facecolor=facecolor,
-                      edgecolor=edgecolor))
+                      fill=True, **kwargs))
 
     # last iteration for vertical connections
-    queue = deque(tree.root.children)
+    queue = deque([root])
 
     while queue:
-        node = tree[queue.popleft()]
+        node = queue.popleft()
         queue.extend(node.children)
 
-        d = node.diameter*hv_ratio
-
         if node.children:
-            x      = parent_x[int(node)]
-            y1, y2 = children_y[int(node)]
+            x      = parent_x[node]
+            y      = parent_y[node] + 0.5*node.diameter
+            y1, y2 = children_y[node]
 
             y1, y2 = min(y1, y2), max(y1, y2)
 
+            dx = 0.5*vbar_diam_ratio*node.diameter*hv_ratio
+
+            if show_node_id:
+                circle = plt.Circle(
+                    (x + dx, y),
+                    max_d, color=kwargs["facecolor"])
+
+                artist = axis.add_artist(circle)
+                artist.set_zorder(5)
+
+                str_id  = str(node)
+                xoffset = len(str_id)*0.3*max_d
+                text    = TextPath((x + dx - xoffset, y - 0.3*max_d), str_id,
+                                   size=max_d)
+
+                textpatch = PathPatch(text, edgecolor="w", facecolor="w",
+                                      linewidth=0.01*max_d)
+
+                axis.add_artist(textpatch)
+                textpatch.set_zorder(6)
+
             axis.add_artist(
-                Rectangle((x, y1), 0.5*d, (y2 - y1) + 0.5*node.diameter,
-                          fill=True, facecolor=facecolor, edgecolor=edgecolor))
+                Rectangle((x, y1), vbar_diam_ratio*node.diameter*hv_ratio,
+                          (y2 - y1) + 0.5*node.diameter, fill=True, **kwargs))
 
     axis.set_xlim(0, tot_length)
-    axis.set_ylim(0, tot_height)
+    axis.set_ylim(np.min(list(parent_y.values())) - 0.75*vspace,
+                  np.max(list(parent_y.values())) + 0.75*vspace)
 
     plt.axis('off')
     fig.patch.set_alpha(0.)
